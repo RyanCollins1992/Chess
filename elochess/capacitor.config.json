@@ -1,0 +1,19 @@
+{
+  "appId": "com.elochess.app",
+  "appName": "EloChess",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0f1117",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "Dark",
+      "backgroundColor": "#0f1117"
+    }
+  }
+}
