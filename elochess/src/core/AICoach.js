@@ -106,7 +106,7 @@ export class AICoach extends BaseManager {
     const { trapName, currentMoves } = this._context
     let reply = "I’m unable to connect right now. Quick tip: develop your pieces (knights before bishops), control the centre, and castle early to keep your king safe."
     if (trapName) reply += ` While studying ${trapName}, focus on the move order and the key idea behind the opening.`
-    if (currentMoves) reply += ‘ Watch for hanging pieces and tactical patterns like forks, pins, and skewers.’
+    if (currentMoves) reply += ' Watch for hanging pieces and tactical patterns like forks, pins, and skewers.'
     return reply
   }
 
