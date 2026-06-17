@@ -33,7 +33,65 @@ function classifyMove(prevEval, newEval, isWhite) {
   return 'BLUNDER'
 }
 
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
+const PIECE_VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
+
+// Win% from a centipawn eval (white's perspective) — Lichess's own sigmoid.
+function winPercent(cpWhite) {
+  return 100 / (1 + Math.exp(-0.00368208 * Math.max(-3000, Math.min(3000, cpWhite))))
+}
+
+// Lichess's per-move accuracy formula: how much of the mover's win% was
+// retained by this move, expressed 0-100.
+function moveAccuracy(evalBeforeWhite, evalAfterWhite, isWhite) {
+  const winBefore = isWhite ? winPercent(evalBeforeWhite) : 100 - winPercent(evalBeforeWhite)
+  const winAfter  = isWhite ? winPercent(evalAfterWhite)  : 100 - winPercent(evalAfterWhite)
+  const raw = 103.1668 * Math.exp(-0.04354 * (winBefore - winAfter)) - 3.1669
+  return Math.max(0, Math.min(100, raw))
+}
+
+// UCI long algebraic ("e7e8q") -> SAN ("e8=Q+") for a given position
+function uciToSan(fen, uci) {
+  if (!uci) return null
+  try {
+    const chess = new Chess(fen)
+    const move = chess.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.slice(4) || 'q' })
+    return move?.san || null
+  } catch { return null }
+}
+
+// Heuristic approximations of Lichess/Chess.com's Brilliant/Great detection —
+// not identical to their algorithms, but real signal rather than guesswork.
+// GREAT: this was clearly the one move that mattered (the next-best
+// alternative, from MultiPV 2, was meaningfully worse).
+function isGreatMove({ playedIsBest, eval1, eval2 }) {
+  if (!playedIsBest || eval2 == null) return false
+  return Math.abs(eval1 - eval2) >= 70
+}
+
+// BRILLIANT: the best move also offers material — the piece that just moved
+// can be captured by an opponent piece worth the same or less — yet the
+// engine still rates it best, i.e. a justified sacrifice.
+function isBrilliantMove({ playedIsBest, fenAfter, toSquare, movedPiece }) {
+  if (!playedIsBest || !toSquare || !movedPiece) return false
+  let chess
+  try { chess = new Chess(fenAfter) } catch { return false }
+  const movedValue = PIECE_VALUE[movedPiece] || 0
+  const replies = chess.moves({ verbose: true })
+  return replies.some(m => m.to === toSquare && m.captured && (PIECE_VALUE[m.piece] || 0) <= movedValue)
+}
+
 // ── Stockfish worker ──────────────────────────────────────────────
+// Bundled NNUE build (single-threaded "lite") — ships inside the app so
+// analysis works offline and nothing fetches/executes remote code.
+// Bare filename — the build auto-detects worker context and resolves its own
+// .wasm by replacing the .js suffix on its own URL, no query/hash needed.
+const ENGINE_JS = 'stockfish/stockfish-18-lite-single.js'
+const STOP_AFTER_MS = 2500 // safety net: never block more than this per position
+
+function clampEval(cp) { return Math.max(-2000, Math.min(2000, cp)) }
+
 class ReviewEngine {
   constructor() {
     this._worker  = null
@@ -48,33 +106,37 @@ class ReviewEngine {
       const done = (ok) => { clearTimeout(timeout); resolve(ok) }
 
       try {
-        // Blob wrapper lets the browser treat it as same-origin so Worker() accepts it.
-        // Do NOT revoke the blob URL until after the worker has fully loaded its source.
-        const CDN = 'https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-16.js'
-        const blob = new Blob([`importScripts('${CDN}')`], { type: 'text/javascript' })
-        const blobUrl = URL.createObjectURL(blob)
-        this._worker = new Worker(blobUrl)
-        // Revoke only after a tick so the browser has fetched the blob content
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 0)
+        const url = new URL(ENGINE_JS, document.baseURI).href
+        this._worker = new Worker(url)
 
         this._worker.onmessage = (e) => {
           const line = e.data
-          if (line === 'uciok')    { this._worker.postMessage('isready'); return }
+          if (line === 'uciok')   { this._worker.postMessage('setoption name MultiPV value 2'); this._worker.postMessage('isready'); return }
           if (line === 'readyok') { this._ready = true; done(true); return }
           if (this._currentResolve) {
             if (line.startsWith('info') && line.includes(' score ')) {
+              const pvMatch   = line.match(/\bmultipv (\d+)/)
+              const pvIndex   = pvMatch ? parseInt(pvMatch[1]) : 1
               const cpMatch   = line.match(/score cp (-?\d+)/)
               const mateMatch = line.match(/score mate (-?\d+)/)
-              if (mateMatch) {
-                const m = parseInt(mateMatch[1])
-                this._currentEval = m > 0 ? 10000 : -10000
-              } else if (cpMatch) {
-                this._currentEval = Math.max(-2000, Math.min(2000, parseInt(cpMatch[1])))
+              const moveMatch = line.match(/\bpv (\S+)/)
+              let cp = null
+              if (mateMatch) { const m = parseInt(mateMatch[1]); cp = m > 0 ? 10000 : -10000 }
+              else if (cpMatch) { cp = clampEval(parseInt(cpMatch[1])) }
+              if (cp !== null) {
+                if (pvIndex === 1) { this._eval1 = cp; if (moveMatch) this._move1 = moveMatch[1] }
+                else if (pvIndex === 2) { this._eval2 = cp; if (moveMatch) this._move2 = moveMatch[1] }
               }
             }
             if (line.startsWith('bestmove')) {
+              clearTimeout(this._stopTimer)
               const parts = line.split(' ')
-              this._currentResolve({ eval: this._currentEval, bestMove: parts[1] })
+              this._currentResolve({
+                eval: this._eval1 ?? 0,
+                bestMove: parts[1] !== '(none)' ? parts[1] : null,
+                eval2: this._eval2 ?? null,
+                secondMove: this._move2 ?? null,
+              })
               this._currentResolve = null
               this._processQueue()
             }
@@ -86,7 +148,7 @@ class ReviewEngine {
     })
   }
 
-  evaluate(fen, depth = 16) {
+  evaluate(fen, depth = 20) {
     return new Promise(resolve => {
       this._queue.push({ fen, depth, resolve })
       if (!this._currentResolve) this._processQueue()
@@ -97,9 +159,11 @@ class ReviewEngine {
     if (this._queue.length === 0) return
     const { fen, depth, resolve } = this._queue.shift()
     this._currentResolve = resolve
-    this._currentEval    = 0
+    this._eval1 = 0; this._move1 = null
+    this._eval2 = null; this._move2 = null
     this._worker.postMessage(`position fen ${fen}`)
     this._worker.postMessage(`go depth ${depth}`)
+    this._stopTimer = setTimeout(() => this._worker.postMessage('stop'), STOP_AFTER_MS)
   }
 
   terminate() { this._worker?.terminate() }
@@ -145,20 +209,22 @@ export default function GameReviewPage() {
     setAnalyzing(true)
     setProgress(0)
     const results = []
-    const DEPTH = 16
+    const DEPTH = 20
 
     let prevEval = 0
+    let prevRes  = null // full engine result for the position before the current move
 
     for (let i = 0; i <= moves.length; i++) {
-      const fen = i === 0 ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' : moves[i-1].fenAfter
+      const fen = i === 0 ? START_FEN : moves[i-1].fenAfter
       const res = await engineRef.current.evaluate(fen, DEPTH)
 
       if (i > 0) {
-        const move    = moves[i-1]
-        const isWhite = move.color === 'w'
-        const evalNow  = res.eval
-        const delta    = isWhite ? (evalNow - prevEval) : (prevEval - evalNow)
-        const prevBest = results[i-2]?.bestMove || null
+        const move      = moves[i-1]
+        const isWhite    = move.color === 'w'
+        const evalNow    = res.eval
+        const betterMove = prevRes?.bestMove || null
+        const playedUci  = `${move.from}${move.to}${move.promotion}`
+        const playedIsBest = betterMove === playedUci
 
         let classification = classifyMove(prevEval, evalNow, isWhite)
 
@@ -170,22 +236,34 @@ export default function GameReviewPage() {
           classification = 'MISS'
         }
 
+        // Brilliant/Great upgrades only apply to moves that were already the engine's top choice
+        if (classification === 'BEST') {
+          if (isBrilliantMove({ playedIsBest, fenAfter: move.fenAfter, toSquare: move.to, movedPiece: move.piece })) {
+            classification = 'BRILLIANT'
+          } else if (isGreatMove({ playedIsBest, eval1: prevRes?.eval, eval2: prevRes?.eval2 })) {
+            classification = 'GREAT'
+          }
+        }
+
         results.push({
           move:        move.san,
           fen:         move.fenAfter,
-          fenBefore:   i === 1 ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' : moves[i-2].fenAfter,
+          fenBefore:   i === 1 ? START_FEN : moves[i-2].fenAfter,
           classification,
           eval:        evalNow,
           evalBefore:  prevEval,
           bestMove:    res.bestMove,
+          betterMove,
           color:       move.color,
           delta:       Math.round(isWhite ? evalNow - prevEval : prevEval - evalNow),
           moveNum:     move.moveNum,
         })
 
         prevEval = evalNow
+        prevRes  = res
       } else {
         prevEval = res.eval
+        prevRes  = res
       }
 
       setProgress(Math.round((i / moves.length) * 100))
@@ -197,10 +275,19 @@ export default function GameReviewPage() {
   }
 
   const currentFen  = currentIdx === 0
-    ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-    : moves[currentIdx - 1]?.fenAfter || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    ? START_FEN
+    : moves[currentIdx - 1]?.fenAfter || START_FEN
 
   const currentAnalysis = analysis[currentIdx - 1] || null
+
+  const bestMoveArrow = currentAnalysis?.bestMove
+    ? [{ startSquare: currentAnalysis.bestMove.slice(0, 2), endSquare: currentAnalysis.bestMove.slice(2, 4), color: '#f5b73199' }]
+    : []
+
+  const betterSan = currentAnalysis && currentAnalysis.betterMove &&
+    !['BEST', 'BRILLIANT', 'GREAT', 'BOOK'].includes(currentAnalysis.classification)
+    ? uciToSan(currentAnalysis.fenBefore, currentAnalysis.betterMove)
+    : null
 
   if (!game) return <ImportPanel onGameLoaded={g => setGame(g)} />
 
@@ -220,6 +307,7 @@ export default function GameReviewPage() {
             boardOrientation={game.color === 'Black' ? 'black' : 'white'}
             customDarkSquareStyle={{ backgroundColor: '#b58863' }}
             customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
+            arrows={bestMoveArrow}
           />
         </div>
 
@@ -236,7 +324,7 @@ export default function GameReviewPage() {
 
         {/* Move classification badge */}
         {currentAnalysis && (
-          <ClassificationBadge c={currentAnalysis.classification} eval={currentAnalysis.eval} delta={currentAnalysis.delta} />
+          <ClassificationBadge c={currentAnalysis.classification} eval={currentAnalysis.eval} delta={currentAnalysis.delta} betterSan={betterSan} />
         )}
       </div>
 
@@ -326,7 +414,7 @@ export default function GameReviewPage() {
 
 function EvalBar({ eval: ev }) {
   // Sigmoid win-probability (same formula as Lichess) — small advantages are clearly visible
-  const whitePct = 100 / (1 + Math.exp(-0.00368208 * Math.max(-3000, Math.min(3000, ev))))
+  const whitePct = winPercent(ev)
   const isMate   = Math.abs(ev) >= 9000
   const display  = isMate
     ? `M${Math.abs(ev) - 9000}`
@@ -376,7 +464,7 @@ function MoveChip({ move, an, active, onClick }) {
   )
 }
 
-function ClassificationBadge({ c, eval: ev, delta }) {
+function ClassificationBadge({ c, eval: ev, delta, betterSan }) {
   const cls = CLASSIFICATIONS[c]
   if (!cls) return null
   const evalDisplay = Math.abs(ev) >= 9000
@@ -392,6 +480,7 @@ function ClassificationBadge({ c, eval: ev, delta }) {
           Eval: {evalDisplay}
           {delta != null && ` · ${delta >= 0 ? '+' : ''}${(delta / 100).toFixed(2)}`}
         </div>
+        {betterSan && <div className="text-xs text-gold mt-0.5">Better: {betterSan}</div>}
       </div>
     </div>
   )
@@ -405,13 +494,12 @@ function AnalysisSummary({ analysis, color }) {
 
   const ORDER = ['BRILLIANT','GREAT','BEST','EXCELLENT','GOOD','BOOK','INACCURACY','MISTAKE','MISS','BLUNDER']
 
-  // Accuracy score (0-100)
+  // Accuracy score (0-100) — Lichess's win%-based per-move formula, averaged.
+  // (Lichess additionally weights this average by positional volatility; that
+  // extra layer is skipped here, but the core per-move formula is the real one.)
   const scored = myMoves.filter(m => m.classification !== 'BOOK')
   const accuracy = scored.length > 0
-    ? Math.round(scored.reduce((acc, m) => {
-        const weights = { BRILLIANT:100,GREAT:100,BEST:100,EXCELLENT:90,GOOD:75,INACCURACY:50,MISTAKE:30,MISS:20,BLUNDER:0 }
-        return acc + (weights[m.classification] || 0)
-      }, 0) / scored.length)
+    ? Math.round(scored.reduce((acc, m) => acc + moveAccuracy(m.evalBefore, m.eval, m.color === 'w'), 0) / scored.length)
     : null
 
   return (
@@ -796,10 +884,14 @@ function parsePGN(pgn) {
       const move  = engine.move(token)
       if (!move) continue
       result.push({
-        san:      move.san,
-        fenAfter: engine.fen,
+        san:       move.san,
+        fenAfter:  engine.fen,
         color,
-        moveNum:  color === 'w' ? `${moveNum}.` : `${moveNum}…`,
+        from:      move.from,
+        to:        move.to,
+        piece:     move.piece,
+        promotion: move.promotion || '',
+        moveNum:   color === 'w' ? `${moveNum}.` : `${moveNum}…`,
       })
       if (color === 'b') moveNum++
     }

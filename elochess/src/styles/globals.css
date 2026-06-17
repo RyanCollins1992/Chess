@@ -37,3 +37,9 @@
     @apply text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide;
   }
 }
+
+/* Referenced by inline style on the king's square in Chessboard.jsx when in check. */
+@keyframes check-blink {
+  0%, 100% { background-color: rgba(220, 38, 38, 0); }
+  50%      { background-color: rgba(220, 38, 38, 0.55); }
+}
