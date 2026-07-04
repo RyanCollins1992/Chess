@@ -321,13 +321,13 @@ export default function GameReviewPage() {
 
         {/* Nav controls */}
         <div className="flex items-center gap-2">
-          <NavBtn onClick={() => setCurrentIdx(0)} disabled={currentIdx === 0} label="⏮" />
-          <NavBtn onClick={() => setCurrentIdx(i => Math.max(0, i-1))} disabled={currentIdx === 0} label="◀" />
+          <NavBtn onClick={() => setCurrentIdx(0)} disabled={currentIdx === 0} label="⏮" name="First move" />
+          <NavBtn onClick={() => setCurrentIdx(i => Math.max(0, i-1))} disabled={currentIdx === 0} label="◀" name="Previous move" />
           <span className="text-sm text-muted px-3 min-w-20 text-center">
             {currentIdx === 0 ? 'Start' : `Move ${currentAnalysis?.moveNum || currentIdx}`}
           </span>
-          <NavBtn onClick={() => setCurrentIdx(i => Math.min(moves.length, i+1))} disabled={currentIdx >= moves.length} label="▶" />
-          <NavBtn onClick={() => setCurrentIdx(moves.length)} disabled={currentIdx >= moves.length} label="⏭" />
+          <NavBtn onClick={() => setCurrentIdx(i => Math.min(moves.length, i+1))} disabled={currentIdx >= moves.length} label="▶" name="Next move" />
+          <NavBtn onClick={() => setCurrentIdx(moves.length)} disabled={currentIdx >= moves.length} label="⏭" name="Last move" />
         </div>
 
         {/* Move classification badge */}
@@ -360,7 +360,7 @@ export default function GameReviewPage() {
           <div className="p-4 border-b border-border shrink-0">
             {analyzing ? (
               <div className="space-y-2">
-                <div className="text-sm text-muted">Analysing… {progress}%</div>
+                <div className="text-sm text-muted" aria-live="polite">Analysing… {progress}%</div>
                 <div className="h-1.5 bg-bg3 rounded-full overflow-hidden">
                   <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${progress}%` }} />
                 </div>
@@ -444,11 +444,12 @@ function EvalBar({ eval: ev }) {
   )
 }
 
-function NavBtn({ onClick, disabled, label }) {
+function NavBtn({ onClick, disabled, label, name }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      aria-label={name}
       className="w-9 h-9 rounded-lg bg-bg3 border border-border text-white hover:bg-border transition-colors disabled:opacity-30 text-sm"
     >
       {label}

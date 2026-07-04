@@ -70,8 +70,9 @@ export default function ImportGamesPage() {
 
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-40">
-            <label className="text-xs text-muted font-medium block mb-1">Chess.com username</label>
+            <label htmlFor="import-username" className="text-xs text-muted font-medium block mb-1">Chess.com username</label>
             <input
+              id="import-username"
               value={username}
               onChange={e => setUsername(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && fetchGames()}
@@ -80,15 +81,15 @@ export default function ImportGamesPage() {
             />
           </div>
           <div>
-            <label className="text-xs text-muted font-medium block mb-1">Month</label>
-            <select value={month} onChange={e => setMonth(Number(e.target.value))}
+            <label htmlFor="import-month" className="text-xs text-muted font-medium block mb-1">Month</label>
+            <select id="import-month" value={month} onChange={e => setMonth(Number(e.target.value))}
               className="bg-bg3 border border-border rounded-lg px-3 py-2 text-sm text-white outline-none">
               {MONTHS.map((m, i) => <option key={i} value={i+1}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted font-medium block mb-1">Year</label>
-            <select value={year} onChange={e => setYear(Number(e.target.value))}
+            <label htmlFor="import-year" className="text-xs text-muted font-medium block mb-1">Year</label>
+            <select id="import-year" value={year} onChange={e => setYear(Number(e.target.value))}
               className="bg-bg3 border border-border rounded-lg px-3 py-2 text-sm text-white outline-none">
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
