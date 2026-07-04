@@ -121,7 +121,11 @@ class ReviewEngine {
               const mateMatch = line.match(/score mate (-?\d+)/)
               const moveMatch = line.match(/\bpv (\S+)/)
               let cp = null
-              if (mateMatch) { const m = parseInt(mateMatch[1]); cp = m > 0 ? 10000 : -10000 }
+              // Encode mate as sign * (10000 - distance): closer mates score
+              // more extreme, and any |cp| >= 9000 decodes back to "mate in
+              // (10000 - |cp|)". Regular cp evals are clamped to ±2000, so the
+              // ranges can never collide.
+              if (mateMatch) { const m = parseInt(mateMatch[1]); cp = m > 0 ? 10000 - m : -10000 - m }
               else if (cpMatch) { cp = clampEval(parseInt(cpMatch[1])) }
               if (cp !== null) {
                 if (pvIndex === 1) { this._eval1 = cp; if (moveMatch) this._move1 = moveMatch[1] }
@@ -228,8 +232,12 @@ export default function GameReviewPage() {
 
         let classification = classifyMove(prevEval, evalNow, isWhite)
 
-        // Book move (opening — first 10 moves)
-        if (i <= 10) classification = 'BOOK'
+        // Book move (opening — first 10 plies). Only relabel moves that
+        // graded GOOD or better: a blunder on move 4 is still a blunder,
+        // and BOOK moves are excluded from the accuracy calculation.
+        if (i <= 10 && ['BEST', 'EXCELLENT', 'GOOD'].includes(classification)) {
+          classification = 'BOOK'
+        }
 
         // Miss: had forced win last move but didn't play it
         if (Math.abs(prevEval) >= 500 && Math.abs(evalNow) < 200 && classification === 'BLUNDER') {
@@ -356,7 +364,7 @@ export default function GameReviewPage() {
                 <div className="h-1.5 bg-bg3 rounded-full overflow-hidden">
                   <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${progress}%` }} />
                 </div>
-                <div className="text-xs text-muted">Depth 16 · Stockfish 16</div>
+                <div className="text-xs text-muted">Depth 20 · Stockfish 18 Lite</div>
               </div>
             ) : (
               <button
@@ -417,7 +425,7 @@ function EvalBar({ eval: ev }) {
   const whitePct = winPercent(ev)
   const isMate   = Math.abs(ev) >= 9000
   const display  = isMate
-    ? `M${Math.abs(ev) - 9000}`
+    ? `M${10000 - Math.abs(ev)}`
     : (Math.abs(ev) / 100).toFixed(1)
   const sign = ev >= 0 ? '+' : '-'
 
@@ -468,7 +476,7 @@ function ClassificationBadge({ c, eval: ev, delta, betterSan }) {
   const cls = CLASSIFICATIONS[c]
   if (!cls) return null
   const evalDisplay = Math.abs(ev) >= 9000
-    ? `Mate in ${Math.abs(ev) - 9000}`
+    ? `Mate in ${10000 - Math.abs(ev)}`
     : `${ev >= 0 ? '+' : ''}${(ev / 100).toFixed(2)}`
 
   return (
