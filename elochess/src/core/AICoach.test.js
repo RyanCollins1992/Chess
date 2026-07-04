@@ -66,6 +66,38 @@ describe('AICoach', () => {
       expect(reply).toContain("I’m unable to connect right now")
     })
 
+    it('passes an abort signal to fetch so a hung request times out', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+      })
+      vi.stubGlobal('fetch', mockFetch)
+
+      await coach.send('Hello')
+      const options = mockFetch.mock.calls[0][1]
+      expect(options.signal).toBeInstanceOf(AbortSignal)
+    })
+
+    it('a timed-out fetch falls back, resets isThinking, and allows a subsequent send', async () => {
+      // AbortSignal.timeout(15000) rejects the fetch with a TimeoutError
+      // DOMException — simulate that rejection directly.
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(
+        new DOMException('The operation was aborted due to timeout', 'TimeoutError')
+      ))
+
+      const reply = await coach.send('Hello')
+      expect(reply).toContain("I’m unable to connect right now")
+      expect(coach.isThinking).toBe(false)
+
+      // The coach must recover: a later call should reach fetch again
+      // instead of throwing "Already thinking".
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'recovered' } }] }),
+      }))
+      await expect(coach.send('Are you back?')).resolves.toBe('recovered')
+    })
+
     it('fallback reply includes context-specific tips when context is set', async () => {
       coach.setContext({ elo: 1000, trapName: 'Fried Liver Attack', currentMoves: 'e4 e5' })
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')))

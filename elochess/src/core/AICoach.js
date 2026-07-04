@@ -28,6 +28,7 @@ ELO GUIDANCE:
 export class AICoach extends BaseManager {
   static MAX_HISTORY = 20
   static MAX_TOKENS  = 500
+  static TIMEOUT_MS  = 15000
   static API_URL     = 'https://text.pollinations.ai/openai'
 
   constructor() {
@@ -65,6 +66,9 @@ export class AICoach extends BaseManager {
       const response = await fetch(AICoach.API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Without a timeout a hung request would leave _isThinking stuck true
+        // forever, permanently blocking future send() calls.
+        signal: AbortSignal.timeout(AICoach.TIMEOUT_MS),
         body: JSON.stringify({
           model:      'openai',
           messages,
