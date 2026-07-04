@@ -1,5 +1,10 @@
 # React + Vite
 
+## Dependency notes
+
+- **`stockfish`** (npm dependency) is never imported by source code. It is kept because it is the source of the engine assets in `public/stockfish/` — `stockfish-18-lite-single.js`/`.wasm` there are byte-identical copies of `node_modules/stockfish/bin/`. There is no copy script; the files were placed manually. To regenerate or upgrade the engine, copy the desired build out of `node_modules/stockfish/bin/` into `public/stockfish/` (the app loads it same-origin via `new Worker(...)`).
+- **`playwright`** (devDependency) has no checked-in spec files or npm scripts; it is used for ad-hoc/exploratory e2e verification scripts run directly with `node` from inside the project directory.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
