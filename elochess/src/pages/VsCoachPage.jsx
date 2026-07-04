@@ -4,6 +4,11 @@ import { Chess } from 'chess.js'
 import { useAppStore } from '../store/useAppStore'
 import { aiCoach } from '../core/AICoach'
 
+// Bundled NNUE build served same-origin from public/stockfish/ (same engine
+// GameReviewPage uses). A classic Worker cannot load a cross-origin script —
+// the constructor throws synchronously — so a CDN URL here can never work.
+const ENGINE_JS = 'stockfish/stockfish-18-lite-single.js'
+
 const DIFFICULTIES = [
   { id:'beginner', label:'Beginner', depth:1,  elo:400,  desc:'Makes random blunders' },
   { id:'easy',     label:'Easy',     depth:3,  elo:700,  desc:'Occasional mistakes' },
@@ -81,12 +86,20 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
     let handshakeTimer
     let handshakeDone = false
     try {
-      worker = new Worker('https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-nnue-16.js', { type: 'classic' })
+      worker = new Worker(new URL(ENGINE_JS, document.baseURI).href)
       let ready = false
       let curEval = 0
       worker.onmessage = (e) => {
         const line = e.data
-        if (line === 'uciok')   { worker.postMessage('isready'); return }
+        if (line === 'uciok') {
+          // Cap playing strength per difficulty tier; depth alone barely weakens
+          // NNUE Stockfish. Note the engine clamps UCI_Elo to its supported
+          // minimum (~1320), so the lowest tiers rely on depth 1-3 + this floor.
+          worker.postMessage('setoption name UCI_LimitStrength value true')
+          worker.postMessage(`setoption name UCI_Elo value ${difficulty.elo}`)
+          worker.postMessage('isready')
+          return
+        }
         if (line === 'readyok') {
           handshakeDone = true
           clearTimeout(handshakeTimer)
