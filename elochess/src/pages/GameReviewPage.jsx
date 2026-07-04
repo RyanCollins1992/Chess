@@ -539,16 +539,37 @@ function AnalysisSummary({ analysis, color }) {
 
 // ── Import panel (shown when no game is loaded) ───────────────────
 
+const IMPORT_TABS = [
+  { id: 'pgn', label: 'PGN' },
+  { id: 'url', label: 'URL' },
+]
+
 function ImportPanel({ onGameLoaded }) {
+  const [tab, setTab] = useState('pgn')
   return (
     <div className="flex items-start justify-center p-6 h-full overflow-y-auto">
       <div className="w-full max-w-lg space-y-5 pt-6">
         <div>
           <div className="text-4xl mb-3 opacity-20">♜</div>
           <h2 className="text-xl font-extrabold text-white">Load a Game</h2>
-          <p className="text-sm text-muted mt-1">Paste PGN from Chess.com or Lichess</p>
+          <p className="text-sm text-muted mt-1">Paste PGN, or fetch a game from a Lichess link</p>
         </div>
-        <PgnImport onLoad={onGameLoaded} />
+        <div className="flex gap-2">
+          {IMPORT_TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                tab === t.id
+                  ? 'border-gold text-gold bg-gold/10'
+                  : 'border-border text-muted hover:text-white'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {tab === 'pgn'
+          ? <PgnImport onLoad={onGameLoaded} />
+          : <UrlImport onLoad={onGameLoaded} />}
       </div>
     </div>
   )
@@ -689,144 +710,6 @@ function UrlImport({ onLoad }) {
          : isChesscom ? 'Chess.com — use PGN tab ↑'
          : 'Fetch from Lichess →'}
       </button>
-    </div>
-  )
-}
-
-function FenImport({ onLoad }) {
-  const [fen, setFen]     = useState('')
-  const [error, setError] = useState('')
-  const showToast = useAppStore(s => s.showToast)
-
-  const handleLoad = () => {
-    const trimmed = fen.trim()
-    if (!trimmed) { setError('Paste a FEN string'); return }
-    try {
-      new Chess(trimmed)
-      const game = {
-        pgn:            `[SetUp "1"]\n[FEN "${trimmed}"]\n\n*`,
-        color:          'White',
-        result:         'Unknown',
-        opponent:       'Position Analysis',
-        opponentRating: '?',
-        myRating:       '?',
-        opening:        'Custom Position',
-        timeControl:    '—',
-        date:           new Date().toISOString().split('T')[0],
-        moves:          0,
-        termination:    '',
-        accuracy:       null,
-      }
-      localStorage.setItem('elochess-review-game', JSON.stringify(game))
-      onLoad(game)
-      showToast('✅ Position loaded', 'success')
-    } catch {
-      setError('Invalid FEN — check the string and try again')
-    }
-  }
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted">Analyse a specific board position with Stockfish</p>
-      <input
-        value={fen}
-        onChange={e => { setFen(e.target.value); setError('') }}
-        onKeyDown={e => e.key === 'Enter' && handleLoad()}
-        placeholder="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
-        className="w-full bg-bg3 border border-border rounded-xl px-3 py-2.5 text-sm text-white font-mono placeholder-muted/40 outline-none focus:border-gold/50"
-      />
-      {error && <div className="text-danger text-sm">{error}</div>}
-      <button onClick={handleLoad} className="btn-gold w-full">Analyse Position →</button>
-      <p className="text-xs text-muted">
-        Get the FEN from Chess.com board editor or Lichess analysis board.
-      </p>
-    </div>
-  )
-}
-
-function ImageImport({ onLoad }) {
-  const [preview, setPreview] = useState(null)
-  const [fen, setFen]         = useState('')
-  const [error, setError]     = useState('')
-  const [dragging, setDragging] = useState(false)
-  const inputRef  = useRef(null)
-  const showToast = useAppStore(s => s.showToast)
-
-  const handleFile = (f) => {
-    if (!f || !f.type.startsWith('image/')) { setError('Please upload an image file'); return }
-    setError('')
-    const reader = new FileReader()
-    reader.onload = e => setPreview(e.target.result)
-    reader.readAsDataURL(f)
-  }
-
-  const handleLoad = () => {
-    const trimmed = fen.trim()
-    if (!trimmed) { setError('Enter the FEN for this position'); return }
-    try {
-      new Chess(trimmed)
-      const game = {
-        pgn:            `[SetUp "1"]\n[FEN "${trimmed}"]\n\n*`,
-        color:          'White',
-        result:         'Unknown',
-        opponent:       'Position Analysis',
-        opponentRating: '?',
-        myRating:       '?',
-        opening:        'Custom Position',
-        timeControl:    '—',
-        date:           new Date().toISOString().split('T')[0],
-        moves:          0,
-        termination:    '',
-        accuracy:       null,
-      }
-      localStorage.setItem('elochess-review-game', JSON.stringify(game))
-      onLoad(game)
-      showToast('✅ Position loaded', 'success')
-    } catch {
-      setError('Invalid FEN — copy it exactly from your chess platform')
-    }
-  }
-
-  return (
-    <div className="space-y-3">
-      <div
-        onDragOver={e => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }}
-        onClick={() => inputRef.current?.click()}
-        className={`cursor-pointer rounded-xl border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-2 p-6 ${
-          dragging ? 'border-gold bg-gold/5' : 'border-border hover:border-gold/40'
-        }`}
-        style={{ minHeight: preview ? undefined : '10rem' }}
-      >
-        <input ref={inputRef} type="file" accept="image/*" className="hidden"
-          onChange={e => handleFile(e.target.files[0])} />
-        {preview
-          ? <img src={preview} alt="Board" className="max-h-52 rounded-lg object-contain" />
-          : <>
-              <span className="text-4xl opacity-30">🖼</span>
-              <span className="text-sm text-muted text-center">Drop a board screenshot or click to upload</span>
-            </>
-        }
-      </div>
-
-      {preview && (
-        <>
-          <p className="text-xs text-muted">
-            Paste the FEN for this position — copy it from Chess.com's board editor or Lichess's analysis board.
-          </p>
-          <input
-            value={fen}
-            onChange={e => { setFen(e.target.value); setError('') }}
-            onKeyDown={e => e.key === 'Enter' && handleLoad()}
-            placeholder="Paste FEN string here"
-            className="w-full bg-bg3 border border-border rounded-xl px-3 py-2.5 text-sm text-white font-mono placeholder-muted/40 outline-none focus:border-gold/50"
-          />
-          {error && <div className="text-danger text-sm">{error}</div>}
-          <button onClick={handleLoad} className="btn-gold w-full">Analyse Position →</button>
-        </>
-      )}
-      {!preview && error && <div className="text-danger text-sm">{error}</div>}
     </div>
   )
 }
