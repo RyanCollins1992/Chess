@@ -1,4 +1,4 @@
-- [EloChess project overview](project_elochess_overview.md) — page/store/SRS engine structure, no git repo in use
+- [EloChess project overview](project_elochess_overview.md) — page/store/SRS engine structure; git root is one level up, user commits themselves
 - [Playwright CORS worker gotcha](playwright-cors-worker-gotcha.md) — route-blocking a cross-origin Worker URL only tests the sync catch path, not async hang/timeout path
 - [EloChess pre-existing lint errors](elochess-preexisting-lint-errors.md) — ~123 ESLint errors in page components are pre-existing, not regressions; lint only touched files
 - [EloChess vitest JSX config gap](elochess-vitest-jsx-config-gap.md) — vitest.config.js needed esbuild.jsx:'automatic' before any .test.jsx component test could run; fixed 2026-06-20

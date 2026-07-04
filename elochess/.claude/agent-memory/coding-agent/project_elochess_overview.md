@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-EloChess is a React 19 + Vite chess training app (no git repo at the working directory root — version control is not in use here, so no commits are made; changes are file edits only).
+EloChess is a React 19 + Vite chess training app. It IS under git — the repo root is one level up (`elochess-react/`), not the working directory. Do NOT commit; the user reviews and commits changes themselves (confirmed 2026-07-04).
 
 Key structure:
 - `src/App.jsx` — maps `currentPage` (from `useAppStore`) to page components via a `PAGES` lookup object.
