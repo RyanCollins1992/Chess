@@ -23,6 +23,7 @@ export default function ImportGamesPage() {
   const navigate  = useAppStore(s => s.navigate)
   const showToast = useAppStore(s => s.showToast)
   const setImportedGames = useAppStore(s => s.setImportedGames)
+  const setReviewGame = useAppStore(s => s.setReviewGame)
 
   const fetchGames = async () => {
     if (!username.trim()) { setError('Enter your Chess.com username'); return }
@@ -53,7 +54,7 @@ export default function ImportGamesPage() {
   }
 
   const openReview = (game) => {
-    localStorage.setItem('elochess-review-game', JSON.stringify(game))
+    setReviewGame(game)
     navigate('game-review')
   }
 

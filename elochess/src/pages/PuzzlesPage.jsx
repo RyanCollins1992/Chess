@@ -121,7 +121,9 @@ export default function PuzzlesPage() {
   const [selectedPuzzle, setSelectedPuzzle] = useState(null)
   const [theme, setTheme]         = useState('All')
   const [difficulty, setDifficulty] = useState('All')
-  const [solved, setSolved]       = useState(() => { try { return JSON.parse(localStorage.getItem('elochess-solved-puzzles') || '[]') } catch { return [] } })
+  const solved = useAppStore(s => s.solvedPuzzles)
+  const markPuzzleSolved = useAppStore(s => s.markPuzzleSolved)
+  const resetSolvedPuzzles = useAppStore(s => s.resetSolvedPuzzles)
   const [streak, setStreak]       = useState(0)
   const showToast     = useAppStore(s => s.showToast)
   const refreshProgress = useAppStore(s => s.refreshProgress)
@@ -134,7 +136,7 @@ export default function PuzzlesPage() {
 
   const handleSolved = (id) => {
     const next = [...new Set([...solved, id])]
-    setSolved(next); localStorage.setItem('elochess-solved-puzzles', JSON.stringify(next))
+    markPuzzleSolved(id)
     const ns = streak + 1; setStreak(ns)
     progressManager.awardXP('PUZZLE_CORRECT')
     if (ns % 5 === 0) progressManager.awardXP('PUZZLE_STREAK_5')
@@ -143,7 +145,7 @@ export default function PuzzlesPage() {
 
     setTimeout(() => {
       if (next.length >= PUZZLES.length) {
-        setSolved([]); localStorage.setItem('elochess-solved-puzzles', '[]')
+        resetSolvedPuzzles()
         showToast('🎉 All puzzles completed! Reshuffling...', 'success')
         setSelectedPuzzle(pickRandomPuzzle([]))
       } else {

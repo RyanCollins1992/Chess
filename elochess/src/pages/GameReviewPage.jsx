@@ -107,9 +107,8 @@ class ReviewEngine {
 
 // ── Main component ────────────────────────────────────────────────
 export default function GameReviewPage() {
-  const [game, setGame]           = useState(() => {
-    try { return JSON.parse(localStorage.getItem('elochess-review-game') || 'null') } catch { return null }
-  })
+  const game    = useAppStore(s => s.reviewGame)
+  const setGame = useAppStore(s => s.setReviewGame)
   const [moves, setMoves]         = useState([])  // parsed move objects
   const [currentIdx, setCurrentIdx] = useState(0)
   const [analysis, setAnalysis]   = useState([])  // per-move analysis
@@ -538,7 +537,6 @@ function PgnImport({ onLoad }) {
       const chess = new Chess()
       chess.loadPgn(pgn.trim())
       const game = parsePgnToGame(pgn.trim(), myColor)
-      localStorage.setItem('elochess-review-game', JSON.stringify(game))
       onLoad(game)
       showToast('✅ Game loaded', 'success')
     } catch {
@@ -593,7 +591,6 @@ function UrlImport({ onLoad }) {
       if (!pgn || pgn.trim().length < 5) throw new Error('Empty response from Lichess — is the game public?')
 
       const game = parsePgnToGame(pgn, myColor)
-      localStorage.setItem('elochess-review-game', JSON.stringify(game))
       onLoad(game)
       showToast('✅ Game loaded', 'success')
     } catch (e) {

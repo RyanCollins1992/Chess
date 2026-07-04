@@ -7,17 +7,14 @@ import { useAppStore } from '../store/useAppStore'
 const FILTERS = ['All', 'Unrated', 'Easy', 'Medium', 'Hard']
 
 export default function RateDifficultyPage() {
-  const [ratings, setRatings] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('elochess-difficulty-ratings') || '{}') } catch { return {} }
-  })
+  const ratings = useAppStore(s => s.difficultyRatings)
+  const setDifficultyRating = useAppStore(s => s.setDifficultyRating)
   const [filter, setFilter]   = useState('All')
   const [search, setSearch]   = useState('')
   const showToast = useAppStore(s => s.showToast)
 
   const saveRating = (trapId, stars) => {
-    const next = { ...ratings, [trapId]: stars }
-    setRatings(next)
-    localStorage.setItem('elochess-difficulty-ratings', JSON.stringify(next))
+    setDifficultyRating(trapId, stars)
     srsEngine.setRating(trapId, stars)
     showToast(
       stars === 1 ? '⭐ Marked as Easy' : stars === 2 ? '⭐⭐ Marked as Medium' : '⭐⭐⭐ Marked as Hard',

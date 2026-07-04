@@ -17,9 +17,9 @@ const CATEGORIES = ['All', 'Rook', 'Queen', 'Knight', 'Bishop']
 export default function MatePatternsPage() {
   const [selected, setSelected] = useState(null)
   const [category, setCategory] = useState('All')
-  const [learned, setLearned]   = useState(() => { try { return JSON.parse(localStorage.getItem('elochess-mate-patterns') || '[]') } catch { return [] } })
+  const learned     = useAppStore(s => s.matePatternsLearned)
+  const markLearned = useAppStore(s => s.markMatePatternLearned)
   const filtered = PATTERNS.filter(p => category === 'All' || p.category === category)
-  const markLearned = (id) => { const next = [...new Set([...learned, id])]; setLearned(next); localStorage.setItem('elochess-mate-patterns', JSON.stringify(next)) }
 
   return (
     <div className="flex h-full overflow-hidden">

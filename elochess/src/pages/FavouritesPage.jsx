@@ -4,20 +4,9 @@ import { useAppStore } from '../store/useAppStore'
 import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
 
-function useFavourites() {
-  const [favs, setFavs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('elochess-favourites') || '[]') } catch { return [] }
-  })
-  const toggle = (id) => {
-    const next = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id]
-    setFavs(next)
-    localStorage.setItem('elochess-favourites', JSON.stringify(next))
-  }
-  return { favs, toggle }
-}
-
 export default function FavouritesPage() {
-  const { favs, toggle } = useFavourites()
+  const favs = useAppStore(s => s.favourites)
+  const toggle = useAppStore(s => s.toggleFavourite)
   const navigate = useAppStore(s => s.navigate)
   const showToast = useAppStore(s => s.showToast)
   const [search, setSearch] = useState('')

@@ -46,6 +46,61 @@ export const useAppStore = create((set, get) => ({
     set({ importedGames: next })
   },
 
+  // ── Favourite traps (persisted array of trap ids) ────────────────
+  favourites: (() => {
+    try { return JSON.parse(localStorage.getItem('elochess-favourites')) || [] } catch { return [] }
+  })(),
+
+  toggleFavourite: (id) => {
+    const cur = get().favourites
+    const next = cur.includes(id) ? cur.filter(f => f !== id) : [...cur, id]
+    localStorage.setItem('elochess-favourites', JSON.stringify(next))
+    set({ favourites: next })
+  },
+
+  // ── Mate patterns learned (persisted array of pattern ids) ───────
+  matePatternsLearned: (() => {
+    try { return JSON.parse(localStorage.getItem('elochess-mate-patterns')) || [] } catch { return [] }
+  })(),
+
+  markMatePatternLearned: (id) => {
+    const next = [...new Set([...get().matePatternsLearned, id])]
+    localStorage.setItem('elochess-mate-patterns', JSON.stringify(next))
+    set({ matePatternsLearned: next })
+  },
+
+  // ── Solved puzzles (persisted array of puzzle ids) ───────────────
+  solvedPuzzles: (() => {
+    try { return JSON.parse(localStorage.getItem('elochess-solved-puzzles')) || [] } catch { return [] }
+  })(),
+
+  markPuzzleSolved: (id) => {
+    const next = [...new Set([...get().solvedPuzzles, id])]
+    localStorage.setItem('elochess-solved-puzzles', JSON.stringify(next))
+    set({ solvedPuzzles: next })
+  },
+
+  resetSolvedPuzzles: () => {
+    localStorage.setItem('elochess-solved-puzzles', '[]')
+    set({ solvedPuzzles: [] })
+  },
+
+  // ── Difficulty ratings (persisted map of trapId → 0-3 stars) ─────
+  difficultyRatings: (() => {
+    try { return JSON.parse(localStorage.getItem('elochess-difficulty-ratings')) || {} } catch { return {} }
+  })(),
+
+  setDifficultyRating: (trapId, stars) => {
+    const next = { ...get().difficultyRatings, [trapId]: stars }
+    localStorage.setItem('elochess-difficulty-ratings', JSON.stringify(next))
+    set({ difficultyRatings: next })
+  },
+
+  // ── Review game (one-shot handoff to GameReviewPage; in-memory only,
+  //    intentionally not persisted — it only needs to survive one navigation) ─
+  reviewGame: null,
+  setReviewGame: (game) => set({ reviewGame: game }),
+
   // ── Global UI ────────────────────────────────────────────────────
   toast:    null,
   showToast: (message, type = 'info', duration = 3000) => {
