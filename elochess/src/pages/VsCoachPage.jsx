@@ -81,6 +81,11 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
 
   // Init Stockfish
   useEffect(() => {
+    // React StrictMode double-invokes this effect in dev (mount -> cleanup -> remount).
+    // The cleanup below sets isMountedRef.current = false; without resetting it here,
+    // the second (real) mount would stay permanently "unmounted" and makeAiMove would
+    // no-op forever, freezing the AI in dev even though the component is live.
+    isMountedRef.current = true
     let worker
     let handshakeTimer
     let handshakeDone = false
