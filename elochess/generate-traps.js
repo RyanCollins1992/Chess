@@ -1,5 +1,12 @@
 import { Chess } from 'chess.js';
 
+// NOTE: One-off exploratory script, kept for reference only. It was used to derive
+// final FENs for trap lines before src/data/traps.js existed; its hardcoded move
+// lists have since diverged from the checked-in data (9 entries here vs 14 in
+// src/data/traps.js) and it neither reads from nor writes to any project file.
+// The maintained validity check is validate-traps.js (`npm run validate:traps`),
+// which is also mirrored by src/data/traps.test.js under vitest.
+
 // Test trap lines and extract their final positions
 const traps = {
   'fried-liver': {
