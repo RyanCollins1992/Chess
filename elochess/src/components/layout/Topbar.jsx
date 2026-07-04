@@ -21,7 +21,7 @@ const PAGE_TITLES = {
 }
 
 export default function Topbar({ onCoachClick }) {
-  const { currentPage, toggleSidebar, progress } = useAppStore()
+  const { currentPage, toggleSidebar, progress, navigate } = useAppStore()
   const page = PAGE_TITLES[currentPage] || { icon: '♟', title: 'EloChess' }
 
   return (
@@ -64,6 +64,15 @@ export default function Topbar({ onCoachClick }) {
         >
           <span>+</span>
           <span>Coach</span>
+        </button>
+
+        {/* Settings */}
+        <button
+          onClick={() => navigate('settings')}
+          className="text-muted hover:text-white transition-colors p-1.5"
+          aria-label="Settings"
+        >
+          <span className="text-lg">⚙️</span>
         </button>
       </div>
     </header>

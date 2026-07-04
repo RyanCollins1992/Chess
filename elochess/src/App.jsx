@@ -17,6 +17,7 @@ import PieceValuesPage    from './pages/PieceValuesPage'
 import EloRoadmapPage     from './pages/EloRoadmapPage'
 import ImportGamesPage    from './pages/ImportGamesPage'
 import GameReviewPage     from './pages/GameReviewPage'
+import LearnOpeningsPage  from './pages/LearnOpeningsPage'
 
 const PAGES = {
   'openings':        <OpeningsPage />,
@@ -36,6 +37,7 @@ const PAGES = {
   'elo-roadmap':     <EloRoadmapPage />,
   'import-games':    <ImportGamesPage />,
   'game-review':     <GameReviewPage />,
+  'learn-openings':  <LearnOpeningsPage />,
 }
 
 export default function App() {

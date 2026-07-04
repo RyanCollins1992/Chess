@@ -40,7 +40,7 @@ export default function RateDifficultyPage() {
     })
   }, [filter, search, ratings])
 
-  const ratedCount = Object.keys(ratings).length
+  const ratedCount = Object.values(ratings).filter(Boolean).length
   const pct        = Math.round((ratedCount / TRAPS.length) * 100)
 
   // Group by color

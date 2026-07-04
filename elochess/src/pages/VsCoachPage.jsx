@@ -57,6 +57,7 @@ function SetupScreen({ playerColor, setPlayerColor, difficulty, setDifficulty, o
 function GameScreen({ playerColor, difficulty, onNewGame }) {
   const chessRef    = useRef(new Chess())
   const workerRef   = useRef(null)
+  const isMountedRef = useRef(true)
   const [fen, setFen]         = useState(chessRef.current.fen())
   const [status, setStatus]   = useState('')
   const [thinking, setThinking] = useState(false)
@@ -77,17 +78,22 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
   // Init Stockfish
   useEffect(() => {
     let worker
+    let handshakeTimer
+    let handshakeDone = false
     try {
       worker = new Worker('https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-nnue-16.js', { type: 'classic' })
       let ready = false
-      let resolver = null
       let curEval = 0
       worker.onmessage = (e) => {
         const line = e.data
         if (line === 'uciok')   { worker.postMessage('isready'); return }
-        if (line === 'readyok') { ready = true; workerRef.current = { worker, ready, resolver: null }
+        if (line === 'readyok') {
+          handshakeDone = true
+          clearTimeout(handshakeTimer)
+          ready = true; workerRef.current = { worker, ready, resolver: null }
           if (playerColor === 'b') makeAiMove()
-          return }
+          return
+        }
         if (line.startsWith('bestmove') && workerRef.current?.resolver) {
           const mv = line.split(' ')[1]
           workerRef.current.resolver(mv === '(none)' ? null : mv)
@@ -95,8 +101,22 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
         }
       }
       worker.postMessage('uci')
-    } catch { showToast('⚠️ Using random AI moves', 'info', 3000) }
-    return () => worker?.terminate()
+      // If the UCI handshake never completes (worker fails to load, CDN blocked, etc.),
+      // fall back to random moves rather than leaving the board frozen forever.
+      handshakeTimer = setTimeout(() => {
+        if (handshakeDone) return
+        showToast('⚠️ Using random AI moves', 'info', 3000)
+        if (playerColor === 'b') makeAiMove()
+      }, 5000)
+    } catch {
+      showToast('⚠️ Using random AI moves', 'info', 3000)
+      if (playerColor === 'b') makeAiMove()
+    }
+    return () => {
+      isMountedRef.current = false
+      clearTimeout(handshakeTimer)
+      worker?.terminate()
+    }
   }, [])
 
   const getBestMove = (fen, depth) => {
@@ -109,10 +129,11 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
   }
 
   const makeAiMove = async () => {
-    if (chessRef.current.isGameOver()) return
+    if (!isMountedRef.current || chessRef.current.isGameOver()) return
     setThinking(true)
     try {
       let mv = await getBestMove(chessRef.current.fen(), difficulty.depth)
+      if (!isMountedRef.current) return
       if (!mv) {
         const legal = chessRef.current.moves({ verbose: true })
         if (legal.length === 0) return
@@ -126,7 +147,7 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
         setStatus(getStatus())
         if (chessRef.current.isGameOver()) setGameOver(true)
       } catch {}
-    } finally { setThinking(false) }
+    } finally { if (isMountedRef.current) setThinking(false) }
   }
 
   const handleDrop = async ({ sourceSquare: from, targetSquare: to }) => {

@@ -14,6 +14,7 @@ const NAV = [
 
   { section: 'LEARN' },
   { id: 'elo-roadmap',   label: 'ELO Roadmap',   icon: '🗺', },
+  { id: 'learn-openings',label: 'Learn Openings', icon: '📖', },
   { id: 'favourites',    label: 'Favourites',     icon: '⭐', },
 
   { section: 'PLAY' },

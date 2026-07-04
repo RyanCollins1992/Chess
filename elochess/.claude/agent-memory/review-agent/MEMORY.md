@@ -1,0 +1,2 @@
+- [VsCoachPage test coverage history](project_vscoach_test_gap.md) — was untested 2026-06-20 AM, gained RTL tests + isMountedRef fix same day; verify per-file, don't trust suite-wide counts.
+- [VsCoachPage refs lint](project_vscoach_refs_lint.md) — pre-existing react-hooks/refs error at chessRef.current render reads (~line 200/202), non-blocking unless a diff touches that region.

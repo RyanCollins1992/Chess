@@ -1,0 +1,222 @@
+{
+  "elochess/capacitor.config.json": {
+    "mtime": 1780753138.0661635,
+    "ast_hash": "03c157ee9cac2291fec7021066fe474d",
+    "semantic_hash": "03c157ee9cac2291fec7021066fe474d"
+  },
+  "elochess/eslint.config.js": {
+    "mtime": 1780748427.0,
+    "ast_hash": "3aa4b57d7f08181d86bde52a4dcb7f22",
+    "semantic_hash": "3aa4b57d7f08181d86bde52a4dcb7f22"
+  },
+  "elochess/generate-traps.js": {
+    "mtime": 1781609009.5656157,
+    "ast_hash": "0c504a3820a2341b01f2c594f0a2679a",
+    "semantic_hash": "0c504a3820a2341b01f2c594f0a2679a"
+  },
+  "elochess/package.json": {
+    "mtime": 1780753145.749009,
+    "ast_hash": "60259f6935d63bc784d1a91c944c7d98",
+    "semantic_hash": "60259f6935d63bc784d1a91c944c7d98"
+  },
+  "elochess/postcss.config.js": {
+    "mtime": 1780748465.0,
+    "ast_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0",
+    "semantic_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
+  },
+  "elochess/src/App.jsx": {
+    "mtime": 1781609270.2925224,
+    "ast_hash": "7daacab0ee0e5a6daf27f4c5e7e82952",
+    "semantic_hash": "7daacab0ee0e5a6daf27f4c5e7e82952"
+  },
+  "elochess/src/components/layout/AppLayout.jsx": {
+    "mtime": 1781633631.9095774,
+    "ast_hash": "3d2ea29a6cf6df17ed5454eb5c2824a4",
+    "semantic_hash": "3d2ea29a6cf6df17ed5454eb5c2824a4"
+  },
+  "elochess/src/components/layout/Sidebar.jsx": {
+    "mtime": 1781609270.2861495,
+    "ast_hash": "39867890da4bffbcc1027212c516a6b8",
+    "semantic_hash": "39867890da4bffbcc1027212c516a6b8"
+  },
+  "elochess/src/components/layout/Topbar.jsx": {
+    "mtime": 1781609270.2922087,
+    "ast_hash": "f37c2284c1a4622987a52395dcbd52ab",
+    "semantic_hash": "f37c2284c1a4622987a52395dcbd52ab"
+  },
+  "elochess/src/components/ui/AICoachPanel.jsx": {
+    "mtime": 1781633623.6755724,
+    "ast_hash": "ee9195241bfed8eb5e7cbe685f3b002c",
+    "semantic_hash": "ee9195241bfed8eb5e7cbe685f3b002c"
+  },
+  "elochess/src/components/ui/Chessboard.jsx": {
+    "mtime": 1781606433.4159186,
+    "ast_hash": "fda033c65c567af9617f16b7f8392917",
+    "semantic_hash": "fda033c65c567af9617f16b7f8392917"
+  },
+  "elochess/src/components/ui/Toast.jsx": {
+    "mtime": 1780748743.0,
+    "ast_hash": "7cdb6c41ca3eff01c02002a2761cab05",
+    "semantic_hash": "7cdb6c41ca3eff01c02002a2761cab05"
+  },
+  "elochess/src/core/AICoach.js": {
+    "mtime": 1781634509.592847,
+    "ast_hash": "8a6024337732e01123aea80a964ac823",
+    "semantic_hash": "8a6024337732e01123aea80a964ac823"
+  },
+  "elochess/src/core/BaseManager.js": {
+    "mtime": 1780748506.0,
+    "ast_hash": "fef0e925496914d376f950c4353b6f02",
+    "semantic_hash": "fef0e925496914d376f950c4353b6f02"
+  },
+  "elochess/src/core/ChessEngine.js": {
+    "mtime": 1780748545.0,
+    "ast_hash": "d627c6ea49e76716872f5bd8e3e94b34",
+    "semantic_hash": "d627c6ea49e76716872f5bd8e3e94b34"
+  },
+  "elochess/src/core/ProgressManager.js": {
+    "mtime": 1780748587.0,
+    "ast_hash": "c685d0937072d782acefe81eb3dcef3b",
+    "semantic_hash": "c685d0937072d782acefe81eb3dcef3b"
+  },
+  "elochess/src/core/SpacedRepetitionEngine.js": {
+    "mtime": 1780748526.0,
+    "ast_hash": "fd3d400c08ba7e915e0b062ba587e95a",
+    "semantic_hash": "fd3d400c08ba7e915e0b062ba587e95a"
+  },
+  "elochess/src/data/openingsRepertoire.js": {
+    "mtime": 1781619581.5025406,
+    "ast_hash": "79e2308b09230f4f34a7f4f58cfc6407",
+    "semantic_hash": "79e2308b09230f4f34a7f4f58cfc6407"
+  },
+  "elochess/src/data/traps.js": {
+    "mtime": 1781609087.6147301,
+    "ast_hash": "83c03db3c3384e63e4fa5e873650f430",
+    "semantic_hash": "83c03db3c3384e63e4fa5e873650f430"
+  },
+  "elochess/src/hooks/useChessBoard.js": {
+    "mtime": 1780757606.9471593,
+    "ast_hash": "8d7540d26b35bcd6690410b41efae865",
+    "semantic_hash": "8d7540d26b35bcd6690410b41efae865"
+  },
+  "elochess/src/main.jsx": {
+    "mtime": 1780748814.0,
+    "ast_hash": "a68f87b61d6a937ba60f671bde417294",
+    "semantic_hash": "a68f87b61d6a937ba60f671bde417294"
+  },
+  "elochess/src/pages/EloRoadmapPage.jsx": {
+    "mtime": 1780752631.0961225,
+    "ast_hash": "44b3b3a1024fe897db9b3088d769f652",
+    "semantic_hash": "44b3b3a1024fe897db9b3088d769f652"
+  },
+  "elochess/src/pages/EndgamesPage.jsx": {
+    "mtime": 1781606433.4159186,
+    "ast_hash": "76d368fb885c8896eb0bbf37e85d3cc8",
+    "semantic_hash": "76d368fb885c8896eb0bbf37e85d3cc8"
+  },
+  "elochess/src/pages/FavouritesPage.jsx": {
+    "mtime": 1780752624.3043108,
+    "ast_hash": "c40aca2cf34494cf98bd17250c5af17a",
+    "semantic_hash": "c40aca2cf34494cf98bd17250c5af17a"
+  },
+  "elochess/src/pages/FreePlayPage.jsx": {
+    "mtime": 1781606433.4139154,
+    "ast_hash": "babbdb46fbe580a4976934a1bd7103dd",
+    "semantic_hash": "babbdb46fbe580a4976934a1bd7103dd"
+  },
+  "elochess/src/pages/GameReviewPage.jsx": {
+    "mtime": 1781624009.2017615,
+    "ast_hash": "06d70d08a694e03a406ecae1f958483a",
+    "semantic_hash": "06d70d08a694e03a406ecae1f958483a"
+  },
+  "elochess/src/pages/ImportGamesPage.jsx": {
+    "mtime": 1780752978.8599029,
+    "ast_hash": "0a6f1a420cf09a08c43235ca40d23de4",
+    "semantic_hash": "0a6f1a420cf09a08c43235ca40d23de4"
+  },
+  "elochess/src/pages/LearnOpeningsPage.jsx": {
+    "mtime": 1781619682.2421913,
+    "ast_hash": "9449bcad0d8e79118840853bfc14c2f0",
+    "semantic_hash": "9449bcad0d8e79118840853bfc14c2f0"
+  },
+  "elochess/src/pages/MatePatternsPage.jsx": {
+    "mtime": 1781606433.4139154,
+    "ast_hash": "54838ce55cb3423dc9fc6a0dc3539da4",
+    "semantic_hash": "54838ce55cb3423dc9fc6a0dc3539da4"
+  },
+  "elochess/src/pages/MemoryDrillPage.jsx": {
+    "mtime": 1781606433.4089468,
+    "ast_hash": "4bc63f69a89f9d910b86dc28014c81a5",
+    "semantic_hash": "4bc63f69a89f9d910b86dc28014c81a5"
+  },
+  "elochess/src/pages/OpeningQuizPage.jsx": {
+    "mtime": 1781606433.4159186,
+    "ast_hash": "cf9214046994d62cb23811a2f30fa29c",
+    "semantic_hash": "cf9214046994d62cb23811a2f30fa29c"
+  },
+  "elochess/src/pages/OpeningsPage.jsx": {
+    "mtime": 1781616812.4926443,
+    "ast_hash": "5ef13e228afbb9fb4f660271fe556301",
+    "semantic_hash": "5ef13e228afbb9fb4f660271fe556301"
+  },
+  "elochess/src/pages/PieceValuesPage.jsx": {
+    "mtime": 1780752628.1901884,
+    "ast_hash": "f99a3a8a0d297ca34a616ffb928748a4",
+    "semantic_hash": "f99a3a8a0d297ca34a616ffb928748a4"
+  },
+  "elochess/src/pages/ProgressPage.jsx": {
+    "mtime": 1780750522.2813685,
+    "ast_hash": "f4d763a27f100ccbc3680f3b0c0379fb",
+    "semantic_hash": "f4d763a27f100ccbc3680f3b0c0379fb"
+  },
+  "elochess/src/pages/PuzzlesPage.jsx": {
+    "mtime": 1781606433.4089468,
+    "ast_hash": "dbdab289446f83880bfa7de497664c0f",
+    "semantic_hash": "dbdab289446f83880bfa7de497664c0f"
+  },
+  "elochess/src/pages/RateDifficultyPage.jsx": {
+    "mtime": 1780752217.9058614,
+    "ast_hash": "b070f883603c2e2c36504859edc9e90e",
+    "semantic_hash": "b070f883603c2e2c36504859edc9e90e"
+  },
+  "elochess/src/pages/SettingsPage.jsx": {
+    "mtime": 1780751181.0580862,
+    "ast_hash": "e51907f532352eacd37c4589a4fd1388",
+    "semantic_hash": "e51907f532352eacd37c4589a4fd1388"
+  },
+  "elochess/src/pages/SpacedReviewPage.jsx": {
+    "mtime": 1781606433.4159186,
+    "ast_hash": "6f7591551912ea8d84c3f7b86cde382e",
+    "semantic_hash": "6f7591551912ea8d84c3f7b86cde382e"
+  },
+  "elochess/src/pages/VsCoachPage.jsx": {
+    "mtime": 1781606433.4159186,
+    "ast_hash": "7fcf39fcb1b0b28c2d434b8a959f4541",
+    "semantic_hash": "7fcf39fcb1b0b28c2d434b8a959f4541"
+  },
+  "elochess/src/store/useAppStore.js": {
+    "mtime": 1780748885.0,
+    "ast_hash": "c55f6117de8e416e6b68e65974712372",
+    "semantic_hash": "c55f6117de8e416e6b68e65974712372"
+  },
+  "elochess/src/store/useOpeningsStore.js": {
+    "mtime": 1780748885.0,
+    "ast_hash": "7af2897955019951f36414ae3baab04c",
+    "semantic_hash": "7af2897955019951f36414ae3baab04c"
+  },
+  "elochess/tailwind.config.js": {
+    "mtime": 1780748474.0,
+    "ast_hash": "b73e21445e52f5d8582f5daf1c25b4d7",
+    "semantic_hash": "b73e21445e52f5d8582f5daf1c25b4d7"
+  },
+  "elochess/validate-traps.js": {
+    "mtime": 1781608450.948987,
+    "ast_hash": "524a4ec9ea4026867dfd8493146ece85",
+    "semantic_hash": "524a4ec9ea4026867dfd8493146ece85"
+  },
+  "elochess/vite.config.js": {
+    "mtime": 1780753141.3548942,
+    "ast_hash": "4845b306aae91cfcbe4cf8c01c5c0877",
+    "semantic_hash": "4845b306aae91cfcbe4cf8c01c5c0877"
+  }
+}
