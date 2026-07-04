@@ -31,6 +31,21 @@ export const useAppStore = create((set, get) => ({
     set({ settings: next })
   },
 
+  // ── Imported games (persisted, keyed by lowercased username) ─────
+  importedGames: (() => {
+    try {
+      const v = JSON.parse(localStorage.getItem('elochess-imported-games'))
+      // Older builds wrote a bare array under this key; only the object map is usable.
+      return v && typeof v === 'object' && !Array.isArray(v) ? v : {}
+    } catch { return {} }
+  })(),
+
+  setImportedGames: (username, entry) => {
+    const next = { ...get().importedGames, [username]: entry }
+    localStorage.setItem('elochess-imported-games', JSON.stringify(next))
+    set({ importedGames: next })
+  },
+
   // ── Global UI ────────────────────────────────────────────────────
   toast:    null,
   showToast: (message, type = 'info', duration = 3000) => {

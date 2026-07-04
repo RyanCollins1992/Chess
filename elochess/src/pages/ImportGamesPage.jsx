@@ -7,17 +7,22 @@ const MONTHS = [
 ]
 
 export default function ImportGamesPage() {
-  const [username, setUsername]   = useState(() => {
-    try { return JSON.parse(localStorage.getItem('elochess-settings') || '{}').chesscomUsername || '' } catch { return '' }
+  // Seed from the store so an already-fetched list survives navigating away and back
+  const [saved] = useState(() => {
+    const { settings, importedGames } = useAppStore.getState()
+    const username = settings.chesscomUsername || ''
+    return { username, ...importedGames[username.trim().toLowerCase()] }
   })
-  const [year, setYear]     = useState(new Date().getFullYear())
-  const [month, setMonth]   = useState(new Date().getMonth() + 1)
-  const [games, setGames]   = useState([])
+  const [username, setUsername] = useState(saved.username)
+  const [year, setYear]     = useState(saved.year ?? new Date().getFullYear())
+  const [month, setMonth]   = useState(saved.month ?? new Date().getMonth() + 1)
+  const [games, setGames]   = useState(saved.games ?? [])
   const [loading, setLoading] = useState(false)
   const [error, setError]   = useState('')
-  const [fetched, setFetched] = useState(false)
+  const [fetched, setFetched] = useState(Boolean(saved.games?.length))
   const navigate  = useAppStore(s => s.navigate)
   const showToast = useAppStore(s => s.showToast)
+  const setImportedGames = useAppStore(s => s.setImportedGames)
 
   const fetchGames = async () => {
     if (!username.trim()) { setError('Enter your Chess.com username'); return }
@@ -37,7 +42,7 @@ export default function ImportGamesPage() {
       setFetched(true)
       if (parsed.length === 0) setError(`No games found for ${MONTHS[month-1]} ${year}`)
       else {
-        localStorage.setItem('elochess-imported-games', JSON.stringify(parsed))
+        setImportedGames(username.trim().toLowerCase(), { games: parsed, year, month })
         showToast(`✅ Imported ${parsed.length} games`, 'success')
       }
     } catch (e) {
