@@ -15,6 +15,7 @@ export default function SpacedReviewPage() {
   const [cardIndex, setCardIndex] = useState(0)
   const [phase, setPhase]         = useState('drill')
   const [results, setResults]     = useState([])
+  const [mistakes, setMistakes]   = useState(0)
   const [key, setKey]             = useState(0)
   const refreshProgress = useAppStore(s => s.refreshProgress)
 
@@ -23,7 +24,13 @@ export default function SpacedReviewPage() {
 
   const trap = session[cardIndex]
   const handleRate = (quality) => {
-    srsEngine.recordReview(trap.id, quality)
+    // Mistakes during the drill cap what gets recorded: fumbling the line shouldn't
+    // earn the same SM-2 boost as a clean recall, whatever the self-rating says.
+    // 2+ wrong attempts = true failure (quality 0, resets repetitions); exactly one
+    // wrong attempt caps the rating at 2 (Good). The summary still shows the
+    // self-rating, since that's what the user actually pressed.
+    const recorded = mistakes >= 2 ? 0 : mistakes === 1 ? Math.min(quality, 2) : quality
+    srsEngine.recordReview(trap.id, recorded)
     progressManager.awardXP('SRS_REVIEW')
     const next = [...results, { trap, quality }]
     setResults(next)
@@ -44,7 +51,7 @@ export default function SpacedReviewPage() {
         </div>
       </div>
       {phase === 'drill'
-        ? <DrillCard key={key} trap={trap} onComplete={() => setPhase('rate')} />
+        ? <DrillCard key={key} trap={trap} onComplete={(mistakeCount) => { setMistakes(mistakeCount); setPhase('rate') }} />
         : <RateCard trap={trap} onRate={handleRate} />}
     </div>
   )
@@ -69,7 +76,7 @@ function DrillCard({ trap, onComplete }) {
       const next = moveIdxRef.current + 1
       moveIdxRef.current = next
       setMoveIdx(next)
-      if (next >= trap.moves.length) { setTimeout(() => onComplete(), 600) }
+      if (next >= trap.moves.length) { setTimeout(() => onComplete(mistakesRef.current), 600) }
       else {
         setTimeout(() => {
           setFlash(null)
