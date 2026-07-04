@@ -1,60 +1,57 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Chess } from 'chess.js'
 
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
 /**
- * useChessBoard
- * 
- * Correct pattern for react-chessboard:
- * - Chess instance lives in a REF (mutations don't trigger renders)
- * - FEN lives in STATE (updating it triggers re-renders)
- * - moveIdx lives in BOTH a ref (for handlers) and state (for UI)
- * 
- * This eliminates all stale closure bugs.
+ * useChessBoard — the shared chessboard drop-handling boilerplate.
+ *
+ * Follows the project's stale-closure rule: the Chess instance lives in a REF
+ * (mutations don't trigger renders); only the FEN string lives in STATE so the
+ * board re-renders. Everything else (move indices, mistake counts, expected-line
+ * checking, follow-up/AI moves, flash styling) stays in the consuming page —
+ * this hook only owns the instance and the fen sync.
+ *
+ * API:
+ * - fen        current position (state — pass to <Chessboard position>)
+ * - chessRef   the Chess instance ref, for reads inside handlers
+ *              (turn(), isGameOver(), history(), moves(), fen(), …)
+ * - move(input)      chess.js move (SAN string or {from,to,promotion}); updates fen
+ *                    and returns the verbose move, or null if the move is illegal.
+ *                    (chess.js throws on illegal moves — returning null IS the
+ *                    legality check, not a swallowed error.)
+ * - tryMove(from, to)  drop-handler sugar for move({from, to, promotion: 'q'})
+ * - undo()     reverts the last move and re-syncs fen
+ * - reset(newFen?)   reloads newFen (or the standard start position). Throws on
+ *                    an invalid FEN so callers can surface the error themselves.
+ *
+ * All returned functions are referentially stable (useCallback), so they are
+ * safe to list in effect dependency arrays.
  */
 export function useChessBoard(initialFen) {
   const chessRef = useRef(new Chess(initialFen || undefined))
-  const [fen, setFen] = useState(() => chessRef.current.fen())
+  const [fen, setFen] = useState(initialFen || START_FEN)
 
-  const move = (input) => {
-    try {
-      const result = chessRef.current.move(input)
-      if (result) setFen(chessRef.current.fen())
-      return result
-    } catch { return null }
-  }
+  const move = useCallback((input) => {
+    let result
+    try { result = chessRef.current.move(input) } catch { return null }
+    if (result) setFen(chessRef.current.fen())
+    return result
+  }, [])
 
-  const undo = () => {
+  const tryMove = useCallback((from, to) => move({ from, to, promotion: 'q' }), [move])
+
+  const undo = useCallback(() => {
     const result = chessRef.current.undo()
     if (result) setFen(chessRef.current.fen())
     return result
-  }
+  }, [])
 
-  const reset = (newFen) => {
+  const reset = useCallback((newFen) => {
     if (newFen) chessRef.current.load(newFen)
     else chessRef.current.reset()
     setFen(chessRef.current.fen())
-  }
+  }, [])
 
-  const loadPgn = (pgn) => {
-    chessRef.current.loadPgn(pgn)
-    setFen(chessRef.current.fen())
-  }
-
-  return {
-    fen,
-    chess: chessRef.current,
-    move,
-    undo,
-    reset,
-    loadPgn,
-    get turn()       { return chessRef.current.turn() },
-    get isWhiteTurn(){ return chessRef.current.turn() === 'w' },
-    get isCheckmate(){ return chessRef.current.isCheckmate() },
-    get isStalemate(){ return chessRef.current.isStalemate() },
-    get isDraw()     { return chessRef.current.isDraw() },
-    get isGameOver() { return chessRef.current.isGameOver() },
-    get isCheck()    { return chessRef.current.inCheck() },
-    get history()    { return chessRef.current.history() },
-    legalMoves: (sq) => chessRef.current.moves({ square: sq, verbose: true }),
-  }
+  return { fen, chessRef, move, tryMove, undo, reset }
 }

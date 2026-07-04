@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
-import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
 import { progressManager } from '../core/ProgressManager'
 import { getTrapById } from '../data/traps'
@@ -58,21 +58,18 @@ export default function SpacedReviewPage() {
 }
 
 function DrillCard({ trap, onComplete }) {
-  const chessRef   = useRef(new Chess(trap.fen))
+  const { fen, tryMove, undo, move } = useChessBoard(trap.fen)
   const moveIdxRef = useRef(0)
   const mistakesRef = useRef(0)
-  const [fen, setFen]         = useState(trap.fen)
   const [moveIdx, setMoveIdx] = useState(0)
   const [flash, setFlash]     = useState(null)
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
-    let result
-    try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
+    const result = tryMove(from, to)
     if (!result) return false
     const normalize = s => s.replace(/[+#!?]/g, '')
     if (normalize(result.san) === normalize(trap.moves[moveIdxRef.current])) {
       setFlash('correct')
-      setFen(chessRef.current.fen())
       const next = moveIdxRef.current + 1
       moveIdxRef.current = next
       setMoveIdx(next)
@@ -80,11 +77,11 @@ function DrillCard({ trap, onComplete }) {
       else {
         setTimeout(() => {
           setFlash(null)
-          try { chessRef.current.move(trap.moves[next]); moveIdxRef.current = next+1; setMoveIdx(next+1); setFen(chessRef.current.fen()) } catch {}
+          if (move(trap.moves[next])) { moveIdxRef.current = next+1; setMoveIdx(next+1) }
         }, 500)
       }
     } else {
-      chessRef.current.undo(); setFlash('wrong'); mistakesRef.current += 1
+      undo(); setFlash('wrong'); mistakesRef.current += 1
       setTimeout(() => setFlash(null), 800)
     }
     return true

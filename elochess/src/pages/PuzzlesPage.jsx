@@ -1,6 +1,6 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
-import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
 
@@ -190,8 +190,7 @@ export default function PuzzlesPage() {
 }
 
 function PuzzleBoard({ puzzle, isSolved, onSolved }) {
-  const chessRef = useRef(new Chess(puzzle.fen))
-  const [fen, setFen]     = useState(puzzle.fen)
+  const { fen, chessRef, tryMove, undo, reset: resetBoard } = useChessBoard(puzzle.fen)
   const [solved, setSolved] = useState(isSolved)
   const [failed, setFailed] = useState(false)
   const [flash, setFlash]   = useState(null)
@@ -200,16 +199,14 @@ function PuzzleBoard({ puzzle, isSolved, onSolved }) {
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (solved) return false
-    let result
-    try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
+    const result = tryMove(from, to)
     if (!result) return false
     const normalize = s => s.replace(/[+#!?]/g, '')
     if (normalize(result.san) === normalize(puzzle.solution[0])) {
-      setFen(chessRef.current.fen())
       setFlash('correct'); setSolved(true); onSolved()
       showToast('✅ Solved! +15 XP', 'success')
     } else {
-      chessRef.current.undo()
+      undo()
       setFlash('wrong'); setFailed(true)
       showToast('Not the right move — try again!', 'error', 1500)
       setTimeout(() => setFlash(null), 800)
@@ -218,8 +215,8 @@ function PuzzleBoard({ puzzle, isSolved, onSolved }) {
   }
 
   const reset = () => {
-    chessRef.current = new Chess(puzzle.fen)
-    setFen(puzzle.fen); setFlash(null)
+    resetBoard(puzzle.fen)
+    setFlash(null)
   }
 
   return (

@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
-import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 
 export default function FreePlayPage() {
-  const chessRef   = useRef(new Chess())
-  const [fen, setFen]         = useState(chessRef.current.fen())
+  const { fen, chessRef, tryMove, undo, reset } = useChessBoard()
   const [orientation, setOrientation] = useState('white')
   const [moveList, setMoveList]   = useState([])
   const [status, setStatus]       = useState('')
@@ -26,10 +25,7 @@ export default function FreePlayPage() {
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (gameOver) return false
-    let result
-    try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
-    if (!result) return false
-    setFen(chessRef.current.fen())
+    if (!tryMove(from, to)) return false
     setMoveList(chessRef.current.history())
     setLastMove({ from, to })
     setStatus(getStatus())
@@ -38,8 +34,7 @@ export default function FreePlayPage() {
   }
 
   const handleUndo = () => {
-    chessRef.current.undo()
-    setFen(chessRef.current.fen())
+    undo()
     setMoveList(chessRef.current.history())
     setGameOver(false)
     setStatus(getStatus())
@@ -47,15 +42,13 @@ export default function FreePlayPage() {
   }
 
   const handleReset = () => {
-    chessRef.current = new Chess()
-    setFen(chessRef.current.fen())
+    reset()
     setMoveList([]); setGameOver(false); setStatus(''); setLastMove(null); setCustomFen('')
   }
 
   const handleLoadFen = () => {
     try {
-      chessRef.current.load(customFen.trim())
-      setFen(chessRef.current.fen())
+      reset(customFen.trim())
       setMoveList([]); setGameOver(false); setStatus(getStatus()); setFenError(''); setLastMove(null)
     } catch { setFenError('Invalid FEN string') }
   }

@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 
 const LEVEL_COLORS = { beginner: 'text-green-400', intermediate: 'text-yellow-400', advanced: 'text-red-400' }
@@ -401,13 +402,11 @@ const OPENINGS = [
 export default function LearnOpeningsPage() {
   const [selected, setSelected]     = useState(OPENINGS[0])
   const [selectedLine, setSelectedLine] = useState(OPENINGS[0].lines[0])
-  const chessRef = useRef(new Chess(selectedLine.fen))
-  const [fen, setFen] = useState(selectedLine.fen)
+  const { fen, tryMove, reset } = useChessBoard(selectedLine.fen)
 
   useEffect(() => {
-    chessRef.current = new Chess(selectedLine.fen)
-    setFen(selectedLine.fen)
-  }, [selectedLine])
+    reset(selectedLine.fen)
+  }, [selectedLine, reset])
   const navigate = useAppStore(s => s.navigate)
 
   return (
@@ -466,14 +465,7 @@ export default function LearnOpeningsPage() {
             <div className="w-full max-w-[360px]">
               <Chessboard
                 position={fen}
-                onPieceDrop={(from, to) => {
-                  if (!chessRef.current) chessRef.current = new Chess(fen)
-                  let result
-                  try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
-                  if (!result) return false
-                  setFen(chessRef.current.fen())
-                  return true
-                }}
+                onPieceDrop={({ sourceSquare, targetSquare }) => !!tryMove(sourceSquare, targetSquare)}
                 boardOrientation={selected.color === 'black' ? 'black' : 'white'}
                 customDarkSquareStyle={{ backgroundColor: '#b58863' }}
                 customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
@@ -486,8 +478,7 @@ export default function LearnOpeningsPage() {
                       for (let j = 0; j <= i; j++) {
                         try { c.move(selectedLine.moves[j]) } catch { break }
                       }
-                      chessRef.current = c
-                      setFen(c.fen())
+                      reset(c.fen())
                     }}
                     className="text-xs font-mono text-accent2 bg-accent2/10 px-1.5 py-0.5 rounded cursor-pointer hover:bg-accent2/20">
                     {i % 2 === 0 ? `${Math.floor(i/2)+1}.` : ''}{m}

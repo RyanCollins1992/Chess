@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
-import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 
 const PATTERNS = [
@@ -55,31 +55,28 @@ export default function MatePatternsPage() {
 }
 
 function PatternViewer({ pattern, isLearned, onLearned }) {
-  const chessRef = useRef(new Chess(pattern.fen))
-  const [fen, setFen]     = useState(pattern.fen)
+  const { fen, tryMove, undo, reset: resetBoard } = useChessBoard(pattern.fen)
   const [solved, setSolved] = useState(isLearned)
   const [flash, setFlash]   = useState(null)
   const showToast = useAppStore(s => s.showToast)
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (pattern.isDemo || solved || pattern.solution.length === 0) return false
-    let result
-    try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
+    const result = tryMove(from, to)
     if (!result) return false
     const normalize = s => s.replace(/[+#!?]/g, '')
     if (normalize(result.san) === normalize(pattern.solution[0])) {
-      setFen(chessRef.current.fen())
       setFlash('correct'); setSolved(true); onLearned()
       showToast('🎉 Correct! Pattern learned!', 'success')
     } else {
-      chessRef.current.undo(); setFlash('wrong')
+      undo(); setFlash('wrong')
       showToast('Not quite — try again!', 'error', 1500)
       setTimeout(() => setFlash(null), 800)
     }
     return true
   }
 
-  const reset = () => { chessRef.current = new Chess(pattern.fen); setFen(pattern.fen); setFlash(null) }
+  const reset = () => { resetBoard(pattern.fen); setFlash(null) }
 
   return (
     <div className="flex h-full overflow-hidden">

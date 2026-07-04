@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { useOpeningsStore } from '../store/useOpeningsStore'
 import { useAppStore } from '../store/useAppStore'
 import { progressManager } from '../core/ProgressManager'
@@ -184,11 +185,11 @@ function TrapEmpty() {
 }
 
 function TrapStudy({ trap, showToast }) {
-  // Use refs for chess engine and move index to avoid stale closures
-  const chessRef  = useRef(new Chess(trap.fen))
+  // Chess instance + fen sync live in the hook; move index stays in a ref
+  // (not state) to avoid stale closures
+  const { fen, tryMove, undo, move, reset: resetBoard } = useChessBoard(trap.fen)
   const moveIdxRef = useRef(0)
 
-  const [fen, setFen]           = useState(trap.fen)
   const [moveIdx, setMoveIdx]   = useState(0)   // for UI only
   const [mistakes, setMistakes] = useState(0)
   const [complete, setComplete] = useState(false)
@@ -231,9 +232,7 @@ function TrapStudy({ trap, showToast }) {
     console.log('TrapStudy.handleDrop', { from, to, moveIdx: moveIdxRef.current })
     if (complete || browseMode) { console.log('TrapStudy: ignored (complete or browseMode)'); return false }
 
-    const chess = chessRef.current
-    let result
-    try { result = chess.move({ from, to, promotion: 'q' }) } catch { return false }
+    const result = tryMove(from, to)
     if (!result) return false
 
     const normalize = s => s.replace(/[+#!?]/g, '')
@@ -241,8 +240,6 @@ function TrapStudy({ trap, showToast }) {
 
     console.log('TrapStudy: move result', result)
     if (normalize(result.san) === normalize(expected)) {
-      const newFen = chess.fen()
-      setFen(newFen)
       setDrillPreviewIdx(null)
       setFlash('correct')
       const next = moveIdxRef.current + 1
@@ -262,18 +259,15 @@ function TrapStudy({ trap, showToast }) {
         // Auto-play opponent move after delay
         setTimeout(() => {
           setFlash(null)
-          const oppMove = trap.moves[next]
-          try {
-            chess.move(oppMove)
+          if (move(trap.moves[next])) {
             moveIdxRef.current = next + 1
             setMoveIdx(next + 1)
-            setFen(chess.fen())
             setDrillPreviewIdx(null)
-          } catch {}
+          }
         }, 500)
       }
     } else {
-      chess.undo()
+      undo()
       console.log('TrapStudy: wrong move', { attempted: result && result.san, expected })
       setFlash('wrong')
       mistakesRef.current += 1
@@ -285,10 +279,9 @@ function TrapStudy({ trap, showToast }) {
   }
 
   const reset = () => {
-    chessRef.current = new Chess(trap.fen)
+    resetBoard(trap.fen)
     moveIdxRef.current = 0
     mistakesRef.current = 0
-    setFen(trap.fen)
     setMoveIdx(0)
     setMistakes(0)
     setComplete(false)

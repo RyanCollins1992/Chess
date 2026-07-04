@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
-import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 import { aiCoach } from '../core/AICoach'
 
@@ -60,10 +60,9 @@ function SetupScreen({ playerColor, setPlayerColor, difficulty, setDifficulty, o
 }
 
 function GameScreen({ playerColor, difficulty, onNewGame }) {
-  const chessRef    = useRef(new Chess())
+  const { fen, chessRef, move, tryMove } = useChessBoard()
   const workerRef   = useRef(null)
   const isMountedRef = useRef(true)
-  const [fen, setFen]         = useState(chessRef.current.fen())
   const [status, setStatus]   = useState('')
   const [thinking, setThinking] = useState(false)
   const [gameOver, setGameOver] = useState(false)
@@ -153,22 +152,17 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
         const pick = legal[Math.floor(Math.random() * legal.length)]
         mv = pick.from + pick.to
       }
-      try {
-        chessRef.current.move({ from: mv.slice(0,2), to: mv.slice(2,4), promotion: mv[4] || 'q' })
-        setFen(chessRef.current.fen())
+      if (move({ from: mv.slice(0,2), to: mv.slice(2,4), promotion: mv[4] || 'q' })) {
         setMoveList(chessRef.current.history())
         setStatus(getStatus())
         if (chessRef.current.isGameOver()) setGameOver(true)
-      } catch {}
+      }
     } finally { if (isMountedRef.current) setThinking(false) }
   }
 
   const handleDrop = async ({ sourceSquare: from, targetSquare: to }) => {
     if (chessRef.current.turn() !== playerColor || thinking || gameOver) return false
-    let result
-    try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
-    if (!result) return false
-    setFen(chessRef.current.fen())
+    if (!tryMove(from, to)) return false
     setMoveList(chessRef.current.history())
     setStatus(getStatus())
     if (chessRef.current.isGameOver()) { setGameOver(true); return true }

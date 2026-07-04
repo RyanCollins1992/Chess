@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
-import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { TRAPS } from '../data/traps'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
@@ -40,9 +40,8 @@ export default function MemoryDrillPage() {
 }
 
 function DrillCard({ trap, index, total, onResult }) {
-  const chessRef   = useRef(new Chess(trap.fen))
+  const { fen, tryMove, undo, move } = useChessBoard(trap.fen)
   const moveIdxRef = useRef(0)
-  const [fen, setFen]           = useState(trap.fen)
   const [moveIdx, setMoveIdx]   = useState(0)
   const [mistakes, setMistakes] = useState(0)
   const [flash, setFlash]       = useState(null)
@@ -50,14 +49,12 @@ function DrillCard({ trap, index, total, onResult }) {
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (done) return false
-    let result
-    try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
+    const result = tryMove(from, to)
     if (!result) return false
 
     const normalize = s => s.replace(/[+#!?]/g, '')
     if (normalize(result.san) === normalize(trap.moves[moveIdxRef.current])) {
       setFlash('correct')
-      setFen(chessRef.current.fen())
       const next = moveIdxRef.current + 1
       moveIdxRef.current = next
       setMoveIdx(next)
@@ -67,16 +64,14 @@ function DrillCard({ trap, index, total, onResult }) {
       } else {
         setTimeout(() => {
           setFlash(null)
-          try {
-            chessRef.current.move(trap.moves[next])
+          if (move(trap.moves[next])) {
             moveIdxRef.current = next + 1
             setMoveIdx(next + 1)
-            setFen(chessRef.current.fen())
-          } catch {}
+          }
         }, 400)
       }
     } else {
-      chessRef.current.undo()
+      undo()
       setFlash('wrong')
       setMistakes(m => m + 1)
       setTimeout(() => setFlash(null), 700)

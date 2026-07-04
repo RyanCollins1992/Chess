@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
-import { Chess } from 'chess.js'
+import { useChessBoard } from '../hooks/useChessBoard'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
 
@@ -40,9 +40,8 @@ export default function EndgamesPage() {
 }
 
 function EndgameBoard({ scenario }) {
-  const chessRef = useRef(new Chess(scenario.fen))
+  const { fen, chessRef, tryMove, move, reset: resetBoard } = useChessBoard(scenario.fen)
   const movesRef = useRef(0)
-  const [fen, setFen]           = useState(scenario.fen)
   const [moves, setMoves]       = useState(0)
   const [complete, setComplete] = useState(false)
   const [flash, setFlash]       = useState(null)
@@ -53,14 +52,11 @@ function EndgameBoard({ scenario }) {
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (complete) return false
-    let result
-    try { result = chessRef.current.move({ from, to, promotion: 'q' }) } catch { return false }
-    if (!result) return false
+    if (!tryMove(from, to)) return false
 
     movesRef.current += 1
     const newMoves = movesRef.current
     setMoves(newMoves)
-    setFen(chessRef.current.fen())
 
     if (chessRef.current.isCheckmate()) {
       setComplete(true); setFlash('correct')
@@ -80,10 +76,9 @@ function EndgameBoard({ scenario }) {
         const legal = chessRef.current.moves({ verbose: true })
         if (legal.length > 0 && !chessRef.current.isGameOver()) {
           const pick = legal[Math.floor(Math.random() * legal.length)]
-          try { chessRef.current.move({ from: pick.from, to: pick.to, promotion: 'q' }) } catch {}
+          move({ from: pick.from, to: pick.to, promotion: 'q' })
           movesRef.current += 1
           setMoves(m => m + 1)
-          setFen(chessRef.current.fen())
         }
       }, 500)
     }
@@ -91,9 +86,9 @@ function EndgameBoard({ scenario }) {
   }
 
   const reset = () => {
-    chessRef.current = new Chess(scenario.fen)
+    resetBoard(scenario.fen)
     movesRef.current = 0
-    setFen(scenario.fen); setMoves(0); setComplete(false); setFlash(null); setHintIdx(0)
+    setMoves(0); setComplete(false); setFlash(null); setHintIdx(0)
   }
 
   return (
