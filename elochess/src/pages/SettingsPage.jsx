@@ -156,6 +156,45 @@ export default function SettingsPage() {
         </div>
       </Section>
 
+      {/* Licenses & Credits */}
+      <Section title="ℹ️ About & Licenses">
+        <div className="space-y-4 text-sm">
+          <div>
+            <div className="font-medium text-white mb-1">Chess Engine</div>
+            <p className="text-muted">
+              Includes <span className="text-white">Stockfish 18</span> (unmodified,{' '}
+              <a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">source</a>),
+              licensed under the{' '}
+              <a href="https://www.gnu.org/licenses/gpl-3.0.txt" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">GNU GPL v3</a>.
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-white mb-1">Data Sources</div>
+            <p className="text-muted">
+              Game import uses the{' '}
+              <a href="https://support.chess.com/en/articles/9650547-published-data-api" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Chess.com Published-Data API</a>{' '}
+              and the{' '}
+              <a href="https://lichess.org/api" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Lichess.org API</a>.
+              EloChess is not affiliated with, endorsed by, or sponsored by Chess.com or Lichess.
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-white mb-1">AI Coach</div>
+            <p className="text-muted">
+              Powered by{' '}
+              <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Pollinations.ai</a>'s
+              public text API (free tier). This is a third-party service and the feature may change if Pollinations updates their API access requirements.
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-white mb-1">Open Source Libraries</div>
+            <p className="text-muted">
+              React, Vite, Tailwind CSS, chess.js, react-chessboard, Zustand, and Capacitor (all MIT licensed).
+            </p>
+          </div>
+        </div>
+      </Section>
+
       {/* Danger zone */}
       <Section title="⚠️ Data" danger>
         <div className="space-y-3">
