@@ -60,7 +60,7 @@ export default function FreePlayPage() {
     [lastMove.to]:   { backgroundColor: 'rgba(245,183,49,0.5)' },
   } : {}
 
-  const isCheck = chessRef.current.inCheck()
+  const isCheck = status.includes('is in check!')
 
   return (
     <div className="flex h-full overflow-hidden">

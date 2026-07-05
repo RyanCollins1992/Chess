@@ -1,6 +1,4 @@
 import { useAppStore } from '../../store/useAppStore'
-import { useOpeningsStore } from '../../store/useOpeningsStore'
-import { srsEngine } from '../../core/SpacedRepetitionEngine'
 
 const NAV = [
   { section: 'START HERE' },

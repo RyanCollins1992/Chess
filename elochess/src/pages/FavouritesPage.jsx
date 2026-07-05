@@ -63,7 +63,7 @@ export default function FavouritesPage() {
                   isFav={true}
                   onToggle={() => handleToggle(trap)}
                   onStudy={() => {
-                    useAppStore.setState({ currentPage: 'openings' })
+                    navigate('openings')
                     showToast(`Opening ${trap.name}…`, 'info', 1200)
                   }}
                 />
@@ -96,9 +96,7 @@ export default function FavouritesPage() {
                   trap={trap}
                   isFav={false}
                   onToggle={() => handleToggle(trap)}
-                  onStudy={() => {
-                    useAppStore.setState({ currentPage: 'openings' })
-                  }}
+                  onStudy={() => navigate('openings')}
                 />
               ))}
             </div>
@@ -120,9 +118,12 @@ function TrapRow({ trap, isFav, onToggle, onStudy }) {
   }
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
-      isFav ? 'bg-gold/5 border-gold/20' : 'bg-bg2 border-border hover:border-border/80'
-    }`}>
+    <div
+      onClick={onStudy}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer ${
+        isFav ? 'bg-gold/5 border-gold/20' : 'bg-bg2 border-border hover:border-border/80'
+      }`}
+    >
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-white text-sm truncate">{trap.name}</div>
         <div className="text-xs text-muted mt-0.5 truncate">{trap.opening}</div>
@@ -135,7 +136,7 @@ function TrapRow({ trap, isFav, onToggle, onStudy }) {
         {studyCount > 0 && <span className="text-xs text-accent2">✓{studyCount}x</span>}
         {inSRS && <span className="text-xs text-accent">🔁</span>}
         <button
-          onClick={onToggle}
+          onClick={(e) => { e.stopPropagation(); onToggle() }}
           className={`text-xl transition-all hover:scale-110 active:scale-95 ${isFav ? 'text-gold' : 'text-muted hover:text-gold'}`}
           title={isFav ? 'Remove from favourites' : 'Add to favourites'}
         >

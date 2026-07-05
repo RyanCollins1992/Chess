@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { Chess } from 'chess.js'
 import { useChessBoard } from '../hooks/useChessBoard'
@@ -14,6 +14,8 @@ export default function OpeningsPage() {
   const traps = getFilteredTraps()
   const [selectedRepertoire, setSelectedRepertoire] = useState(null)
   const [selectedLine, setSelectedLine] = useState(null)
+  const [prevActiveColor, setPrevActiveColor] = useState(activeColor)
+  const [prevSelectedTrap, setPrevSelectedTrap] = useState(selectedTrap)
 
   const filteredRepertoire = OPENING_REPERTOIRE
     .filter(r => activeColor !== 'mates' ? r.color === activeColor : false)
@@ -34,17 +36,20 @@ export default function OpeningsPage() {
     }))
     .filter(g => g.lines.length > 0)
 
-  useEffect(() => {
+  // Reset the study panel whenever the color tab or the selected trap changes,
+  // adjusted during render rather than in an effect (react-hooks/set-state-in-effect).
+  if (activeColor !== prevActiveColor) {
+    setPrevActiveColor(activeColor)
     setSelectedRepertoire(null)
     setSelectedLine(null)
-  }, [activeColor])
-
-  useEffect(() => {
+  }
+  if (selectedTrap !== prevSelectedTrap) {
+    setPrevSelectedTrap(selectedTrap)
     if (selectedTrap) {
       setSelectedRepertoire(null)
       setSelectedLine(null)
     }
-  }, [selectedTrap])
+  }
 
   const chooseLine = (line, group) => {
     selectTrap(null)
@@ -166,6 +171,7 @@ function TrapListItem({ trap, active, onClick, studyCount, inSRS }) {
         <div className="flex flex-col items-end gap-1 shrink-0">
           <span className={`text-[10px] font-bold uppercase ${levelColors[trap.level] || 'text-muted'}`}>{trap.level}</span>
           {studyCount > 0 && <span className="text-[10px] text-accent2">✓ {studyCount}x</span>}
+          {inSRS && <span className="text-[10px] text-accent">🔁</span>}
         </div>
       </div>
     </button>
@@ -195,12 +201,12 @@ function TrapStudy({ trap, showToast }) {
   const [complete, setComplete] = useState(false)
   const [flash, setFlash]       = useState(null)
   const [browseMode, setBrowseMode] = useState(false)
-  const [browseFens, setBrowseFens] = useState(() => {
+  const [browseFens] = useState(() => {
     // Pre-compute all FENs for prev/next navigation
     const c = new Chess(trap.fen)
     const fens = [trap.fen]
     for (const m of trap.moves) {
-      try { c.move(m); fens.push(c.fen()) } catch {}
+      try { c.move(m); fens.push(c.fen()) } catch { /* invalid move in trap data, skip */ }
     }
     return fens
   })
@@ -211,7 +217,7 @@ function TrapStudy({ trap, showToast }) {
     const c = new Chess()
     const fens = [c.fen()]
     for (const m of trap.moves) {
-      try { c.move(m); fens.push(c.fen()) } catch {}
+      try { c.move(m); fens.push(c.fen()) } catch { /* invalid move in trap data, skip */ }
     }
     return fens
   })
@@ -291,14 +297,6 @@ function TrapStudy({ trap, showToast }) {
     setDrillPreviewIdx(null)
   }
 
-  // Ensure internal state resets whenever a different trap is selected.
-  // This covers cases where the component isn't unmounted (same key/reference),
-  // preventing the board from showing progressed moves on selection.
-  useEffect(() => {
-    reset()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trap.id])
-
   const toggleSRS = () => {
     if (inSRS) { srsEngine.unenroll(trap.id); setInSRS(false) }
     else { srsEngine.enroll(trap.id); setInSRS(true) }
@@ -311,7 +309,6 @@ function TrapStudy({ trap, showToast }) {
       const next = Math.max(0, browseIdx - 1)
       setBrowseIdx(next)
     } else {
-      const len = drillPreviewFromStart ? startPreviewFens.length : browseFens.length
       const next = Math.max(0, (drillPreviewIdx ?? 0) - 1)
       setDrillPreviewIdx(next)
     }
@@ -472,7 +469,7 @@ function RepertoireStudy({ line, group }) {
     const c = new Chess()
     const fens = [c.fen()]
     for (const m of line.moves) {
-      try { c.move(m); fens.push(c.fen()) } catch {}
+      try { c.move(m); fens.push(c.fen()) } catch { /* invalid move in line data, skip */ }
     }
     return fens
   })

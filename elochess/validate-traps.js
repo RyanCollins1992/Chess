@@ -22,7 +22,7 @@ TRAPS.forEach(trap => {
     let result
     try {
       result = chess.move(move, { sloppy: true })
-    } catch (e) {
+    } catch {
       result = null
     }
     

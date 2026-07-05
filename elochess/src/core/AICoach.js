@@ -86,7 +86,7 @@ export class AICoach extends BaseManager {
       this.emit('message', { role: 'assistant', content: reply })
       return reply
 
-    } catch (error) {
+    } catch {
       const fallback = this._getFallbackReply()
       this._history.push({ role: 'assistant', content: fallback })
       this.emit('message', { role: 'assistant', content: fallback })

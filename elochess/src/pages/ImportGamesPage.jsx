@@ -239,7 +239,7 @@ function parseGame(g, myUsername) {
 
 function formatTimeControl(tc) {
   if (!tc || tc === '-') return 'Unknown'
-  const [base, inc] = tc.split('+').map(Number)
+  const [base] = tc.split('+').map(Number)
   if (isNaN(base)) return tc
   if (base < 180) return `${base}s Bullet`
   if (base < 600) return `${Math.round(base/60)}min Blitz`

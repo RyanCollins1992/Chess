@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { Chess } from 'chess.js'
 import { useAppStore } from '../store/useAppStore'
@@ -116,17 +116,19 @@ export default function GameReviewPage() {
   const [progress, setProgress]   = useState(0)
   const [sfReady, setSfReady]     = useState(false)
   const engineRef = useRef(null)
-  const navigate  = useAppStore(s => s.navigate)
   const showToast = useAppStore(s => s.showToast)
+  const [prevGame, setPrevGame] = useState(game)
 
-  // Parse PGN into move list on load
-  useEffect(() => {
-    if (!game?.pgn) return
-    const parsed = parsePGN(game.pgn)
-    setMoves(parsed)
-    setCurrentIdx(0)
-    setAnalysis([])
-  }, [game])
+  // Parse PGN into move list on load, adjusted during render rather than in
+  // an effect (react-hooks/set-state-in-effect) since `game` is external store state.
+  if (game !== prevGame) {
+    setPrevGame(game)
+    if (game?.pgn) {
+      setMoves(parsePGN(game.pgn))
+      setCurrentIdx(0)
+      setAnalysis([])
+    }
+  }
 
   // Init Stockfish
   useEffect(() => {
@@ -136,7 +138,7 @@ export default function GameReviewPage() {
       if (!ok) showToast('⚠️ Stockfish unavailable — analysis disabled', 'error', 5000)
     })
     return () => engineRef.current?.terminate()
-  }, [])
+  }, [showToast])
 
   // Analyse all moves
   const analyseGame = async () => {

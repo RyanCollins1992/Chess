@@ -23,7 +23,7 @@ export default function AICoachPanel({ open, onClose, onOpen }) {
       setTimeout(() => inputRef.current?.focus(), 300)
       aiCoach.setContext({ elo: progress.currentElo })
     }
-  }, [open])
+  }, [open, progress.currentElo])
 
   useEffect(() => {
     if (msgsRef.current) {

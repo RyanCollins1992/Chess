@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { TRAPS } from '../data/traps'
 import { progressManager } from '../core/ProgressManager'

@@ -79,6 +79,35 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
     return c.turn() === 'w' ? "White's turn" : "Black's turn"
   }
 
+  const getBestMove = (fen, depth) => {
+    return new Promise(resolve => {
+      if (!workerRef.current?.ready) { resolve(null); return }
+      workerRef.current.resolver = resolve
+      workerRef.current.worker.postMessage(`position fen ${fen}`)
+      workerRef.current.worker.postMessage(`go depth ${depth}`)
+    })
+  }
+
+  const makeAiMove = async () => {
+    if (!isMountedRef.current || chessRef.current.isGameOver()) return
+    setThinking(true)
+    try {
+      let mv = await getBestMove(chessRef.current.fen(), difficulty.depth)
+      if (!isMountedRef.current) return
+      if (!mv) {
+        const legal = chessRef.current.moves({ verbose: true })
+        if (legal.length === 0) return
+        const pick = legal[Math.floor(Math.random() * legal.length)]
+        mv = pick.from + pick.to
+      }
+      if (move({ from: mv.slice(0,2), to: mv.slice(2,4), promotion: mv[4] || 'q' })) {
+        setMoveList(chessRef.current.history())
+        setStatus(getStatus())
+        if (chessRef.current.isGameOver()) setGameOver(true)
+      }
+    } finally { if (isMountedRef.current) setThinking(false) }
+  }
+
   // Init Stockfish
   useEffect(() => {
     // React StrictMode double-invokes this effect in dev (mount -> cleanup -> remount).
@@ -92,7 +121,6 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
     try {
       worker = new Worker(new URL(ENGINE_JS, document.baseURI).href)
       let ready = false
-      let curEval = 0
       worker.onmessage = (e) => {
         const line = e.data
         if (line === 'uciok') {
@@ -134,36 +162,13 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
       clearTimeout(handshakeTimer)
       worker?.terminate()
     }
+    // Deliberately run once per mount: playerColor/difficulty are fixed for the
+    // life of a GameScreen (a new game remounts via the `key={gameKey}` in the
+    // parent), so the mount-time makeAiMove/showToast closure is all this needs.
+    // Re-running this on every render would tear down and recreate the worker
+    // constantly (this shipped once and permanently froze the AI in dev).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  const getBestMove = (fen, depth) => {
-    return new Promise(resolve => {
-      if (!workerRef.current?.ready) { resolve(null); return }
-      workerRef.current.resolver = resolve
-      workerRef.current.worker.postMessage(`position fen ${fen}`)
-      workerRef.current.worker.postMessage(`go depth ${depth}`)
-    })
-  }
-
-  const makeAiMove = async () => {
-    if (!isMountedRef.current || chessRef.current.isGameOver()) return
-    setThinking(true)
-    try {
-      let mv = await getBestMove(chessRef.current.fen(), difficulty.depth)
-      if (!isMountedRef.current) return
-      if (!mv) {
-        const legal = chessRef.current.moves({ verbose: true })
-        if (legal.length === 0) return
-        const pick = legal[Math.floor(Math.random() * legal.length)]
-        mv = pick.from + pick.to
-      }
-      if (move({ from: mv.slice(0,2), to: mv.slice(2,4), promotion: mv[4] || 'q' })) {
-        setMoveList(chessRef.current.history())
-        setStatus(getStatus())
-        if (chessRef.current.isGameOver()) setGameOver(true)
-      }
-    } finally { if (isMountedRef.current) setThinking(false) }
-  }
 
   const handleDrop = async ({ sourceSquare: from, targetSquare: to }) => {
     if (chessRef.current.turn() !== playerColor || thinking || gameOver) return false
@@ -209,9 +214,9 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
       <div className="w-64 shrink-0 border-l border-border bg-[#111827] flex flex-col p-4 gap-3 overflow-y-auto">
         <div className={`rounded-xl px-3 py-2 text-sm font-medium text-center ${
           gameOver ? 'bg-gold/15 text-gold border border-gold/30' :
-          chessRef.current.inCheck() ? 'bg-danger/15 text-danger border border-danger/30' :
+          status.includes('is in check!') ? 'bg-danger/15 text-danger border border-danger/30' :
           'bg-bg3 text-[#9CA3AF] border border-border'}`}>
-          {status || (chessRef.current.turn() === 'w' ? "White's turn" : "Black's turn")}
+          {status || (fen.split(' ')[1] === 'w' ? "White's turn" : "Black's turn")}
         </div>
         <div className="flex-1 overflow-y-auto">
           <div className="text-xs text-muted uppercase tracking-wide font-bold mb-2">Moves</div>

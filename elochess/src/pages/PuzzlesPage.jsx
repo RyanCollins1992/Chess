@@ -190,7 +190,7 @@ export default function PuzzlesPage() {
 }
 
 function PuzzleBoard({ puzzle, isSolved, onSolved }) {
-  const { fen, chessRef, tryMove, undo, reset: resetBoard } = useChessBoard(puzzle.fen)
+  const { fen, tryMove, undo, reset: resetBoard } = useChessBoard(puzzle.fen)
   const [solved, setSolved] = useState(isSolved)
   const [failed, setFailed] = useState(false)
   const [flash, setFlash]   = useState(null)
@@ -233,7 +233,7 @@ function PuzzleBoard({ puzzle, isSolved, onSolved }) {
         <div><div className="font-bold text-white text-lg">{puzzle.title}</div><div className="text-xs text-muted">{puzzle.theme}</div></div>
         {solved
           ? <div className="bg-accent2/15 border border-accent2/30 rounded-xl p-4 text-center"><div className="text-accent2 font-bold text-lg">✅ Solved!</div>{!failed && <div className="text-xs text-muted mt-1">First try!</div>}</div>
-          : <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-[#9CA3AF]">🎯 Find the best move for {chessRef.current.turn() === 'w' ? 'White' : 'Black'}</div>}
+          : <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-[#9CA3AF]">🎯 Find the best move for {fen.split(' ')[1] === 'w' ? 'White' : 'Black'}</div>}
         <div className="space-y-2">
           <button onClick={() => setShowHint(!showHint)} className="w-full btn-ghost text-sm">💡 {showHint ? 'Hide' : 'Show'} Hint</button>
           {showHint && <div className="bg-gold/10 border border-gold/30 rounded-lg p-3 text-sm text-[#9CA3AF]">{puzzle.hint}</div>}
