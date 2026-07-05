@@ -26,6 +26,12 @@ import {
 // .wasm by replacing the .js suffix on its own URL, no query/hash needed.
 const ENGINE_JS = 'stockfish/stockfish-18-lite-single.js'
 const STOP_AFTER_MS = 2500 // safety net: never block more than this per position
+// Each ReviewEngine is a fully independent Worker (single-threaded WASM), so a
+// pool of them can evaluate different positions concurrently — evaluating a
+// position never depends on any other position's result, only the later
+// move-classification pass does. Capped at 4: beyond that, contention on a
+// typical machine's cores stops paying off and just fights the UI thread.
+const ENGINE_POOL_SIZE = Math.max(1, Math.min(4, (typeof navigator !== 'undefined' ? navigator.hardwareConcurrency : 4) || 4))
 
 class ReviewEngine {
   constructor() {
@@ -117,7 +123,13 @@ export default function GameReviewPage() {
   const [sfReady, setSfReady]     = useState(false)
   const engineRef = useRef(null)
   const showToast = useAppStore(s => s.showToast)
-  const [prevGame, setPrevGame] = useState(game)
+  // Deliberately not seeded from `game`: this page remounts fresh every time
+  // it's navigated to (App.jsx's single-page switcher unmounts the previous
+  // page), and reviewGame is often already set in the store by the time that
+  // happens (e.g. ImportGamesPage sets it then navigates here). Seeding from
+  // `game` would make the first render's `game !== prevGame` check false,
+  // silently skipping the PGN parse forever.
+  const [prevGame, setPrevGame] = useState(null)
 
   // Parse PGN into move list on load, adjusted during render rather than in
   // an effect (react-hooks/set-state-in-effect) since `game` is external store state.
@@ -130,30 +142,52 @@ export default function GameReviewPage() {
     }
   }
 
-  // Init Stockfish
+  // Init a pool of Stockfish workers
   useEffect(() => {
-    engineRef.current = new ReviewEngine()
-    engineRef.current.init().then(ok => {
+    const engines = Array.from({ length: ENGINE_POOL_SIZE }, () => new ReviewEngine())
+    engineRef.current = engines
+    Promise.all(engines.map(e => e.init())).then(results => {
+      const ok = results.some(Boolean)
       setSfReady(ok)
       if (!ok) showToast('⚠️ Stockfish unavailable — analysis disabled', 'error', 5000)
     })
-    return () => engineRef.current?.terminate()
+    return () => engines.forEach(e => e.terminate())
   }, [showToast])
 
-  // Analyse all moves
+  // Analyse all moves. Evaluation of each position is independent (only the
+  // classification pass below needs them in order), so the expensive part —
+  // asking Stockfish to evaluate every position — is spread across the whole
+  // engine pool concurrently; classification then runs as a fast, synchronous
+  // second pass over the already-computed results.
   const analyseGame = async () => {
-    if (!sfReady || moves.length === 0) return
+    const engines = (engineRef.current || []).filter(e => e._ready)
+    if (!sfReady || moves.length === 0 || engines.length === 0) return
     setAnalyzing(true)
     setProgress(0)
-    const results = []
     const DEPTH = 20
 
+    const totalPositions = moves.length + 1
+    const rawResults = new Array(totalPositions)
+    let completed = 0
+    let nextIndex = 0
+
+    const runWorker = async (engine) => {
+      while (nextIndex < totalPositions) {
+        const i = nextIndex++
+        const fen = i === 0 ? START_FEN : moves[i-1].fenAfter
+        rawResults[i] = await engine.evaluate(fen, DEPTH)
+        completed++
+        setProgress(Math.round((completed / totalPositions) * 100))
+      }
+    }
+    await Promise.all(engines.map(runWorker))
+
+    const results = []
     let prevEval = 0
     let prevRes  = null // full engine result for the position before the current move
 
     for (let i = 0; i <= moves.length; i++) {
-      const fen = i === 0 ? START_FEN : moves[i-1].fenAfter
-      const res = await engineRef.current.evaluate(fen, DEPTH)
+      const res = rawResults[i]
 
       if (i > 0) {
         const move      = moves[i-1]
@@ -206,8 +240,6 @@ export default function GameReviewPage() {
         prevEval = res.eval
         prevRes  = res
       }
-
-      setProgress(Math.round((i / moves.length) * 100))
     }
 
     setAnalysis(results)
@@ -297,7 +329,7 @@ export default function GameReviewPage() {
                 <div className="h-1.5 bg-bg3 rounded-full overflow-hidden">
                   <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${progress}%` }} />
                 </div>
-                <div className="text-xs text-muted">Depth 20 · Stockfish 18 Lite</div>
+                <div className="text-xs text-muted">Depth 20 · Stockfish 18 Lite × {ENGINE_POOL_SIZE}</div>
               </div>
             ) : (
               <button

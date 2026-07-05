@@ -1,8 +1,20 @@
 import { useState } from 'react'
+import { Chess } from 'chess.js'
 import { Chessboard } from '../components/ui/Chessboard'
 import { TRAPS } from '../data/traps'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
+
+// trap.fen is the drill's *starting* position (usually the initial position) —
+// the recognizable position for a "what opening/trap is this?" quiz is the one
+// reached after playing out trap.moves, not the position it starts from.
+function finalPositionFen(trap) {
+  const chess = new Chess(trap.fen)
+  for (const move of trap.moves) {
+    try { chess.move(move, { sloppy: true }) } catch { break }
+  }
+  return chess.fen()
+}
 
 function buildQuiz(count = 10) {
   const shuffled = [...TRAPS].sort(() => Math.random() - 0.5).slice(0, count)
@@ -13,7 +25,7 @@ function buildQuiz(count = 10) {
       .slice(0, 3)
       .map(t => t.name)
     const options = [...others, trap.name].sort(() => Math.random() - 0.5)
-    return { trap, options, correct: trap.name }
+    return { trap, options, correct: trap.name, fen: finalPositionFen(trap) }
   })
 }
 
@@ -86,7 +98,7 @@ export default function OpeningQuizPage() {
 
           <div className="rounded-xl overflow-hidden">
             <Chessboard
-              position={q.trap.fen}
+              position={q.fen}
               arePiecesDraggable={false}
               boardOrientation={q.trap.color === 'black' ? 'black' : 'white'}
               customDarkSquareStyle={{ backgroundColor: '#b58863' }}
