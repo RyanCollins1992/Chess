@@ -65,7 +65,7 @@ export default function ImportGamesPage() {
       {/* Header */}
       <div className="px-6 pt-5 pb-4 border-b border-border shrink-0 space-y-4">
         <div>
-          <h2 className="text-xl font-extrabold text-white">Import Games</h2>
+          <h2 className="text-xl font-extrabold text-white font-heading">Import Games</h2>
           <p className="text-muted text-sm mt-0.5">Fetch your Chess.com games for review</p>
         </div>
 

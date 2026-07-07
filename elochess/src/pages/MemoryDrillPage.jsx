@@ -93,9 +93,7 @@ function DrillCard({ trap, index, total, onResult }) {
           <div className={`rounded-xl overflow-hidden transition-all duration-200 ${flash === 'correct' ? 'ring-2 ring-accent2' : flash === 'wrong' ? 'ring-2 ring-danger' : done ? 'ring-2 ring-gold' : ''}`}>
             <Chessboard position={fen} onPieceDrop={handleDrop}
               boardOrientation={trap.color === 'black' ? 'black' : 'white'}
-              arePiecesDraggable={!done}
-              customDarkSquareStyle={{ backgroundColor: '#b58863' }}
-              customLightSquareStyle={{ backgroundColor: '#f0d9b5' }} />
+              arePiecesDraggable={!done} />
           </div>
           <div className="mt-3 flex gap-1 justify-center">
             {trap.moves.map((_, i) => (
@@ -104,9 +102,9 @@ function DrillCard({ trap, index, total, onResult }) {
           </div>
         </div>
       </div>
-      <div className="w-56 shrink-0 border-l border-border bg-[#111827] p-4 flex flex-col gap-4">
+      <div className="w-56 shrink-0 border-l border-border bg-bg2 p-4 flex flex-col gap-4">
         <div><div className="font-bold text-white">{trap.name}</div><div className="text-xs text-muted mt-0.5">{trap.opening}</div></div>
-        <div className="text-sm text-[#9CA3AF]">🧠 Play all {trap.moves.length} moves from memory</div>
+        <div className="text-sm text-muted">🧠 Play all {trap.moves.length} moves from memory</div>
         {mistakes > 0 && <div className="text-xs text-danger">⚠️ {mistakes} mistake{mistakes !== 1 ? 's' : ''}</div>}
         {done && <div className="bg-accent2/15 border border-accent2/30 rounded-xl p-3 text-center"><div className="text-accent2 font-bold">{mistakes === 0 ? '⭐ Perfect!' : '✅ Done'}</div></div>}
         <button onClick={() => onResult(trap, false)} className="mt-auto btn-ghost text-sm">Skip →</button>
@@ -119,7 +117,7 @@ function SetupScreen({ drillSize, setDrillSize, colorFilter, setColorFilter, onS
   return (
     <div className="flex items-center justify-center h-full p-6">
       <div className="card max-w-md w-full space-y-6">
-        <div className="text-center"><div className="text-4xl mb-2">🧠</div><h2 className="text-xl font-extrabold text-white">Memory Drill</h2><p className="text-muted text-sm mt-1">Play opening moves from memory — no hints</p></div>
+        <div className="text-center"><div className="text-4xl mb-2">🧠</div><h2 className="text-xl font-extrabold text-white font-heading">Memory Drill</h2><p className="text-muted text-sm mt-1">Play opening moves from memory — no hints</p></div>
         <div>
           <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Trap colour</div>
           <div className="flex gap-2">

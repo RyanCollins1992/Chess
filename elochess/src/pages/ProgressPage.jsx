@@ -18,7 +18,7 @@ export default function ProgressPage() {
 
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-extrabold text-white">My Progress</h2>
+        <h2 className="text-2xl font-extrabold text-white font-heading">My Progress</h2>
         <p className="text-muted text-sm mt-1">Track your chess improvement over time</p>
       </div>
 
@@ -73,7 +73,7 @@ export default function ProgressPage() {
             style={{ width: `${masteredPct}%` }}
           />
         </div>
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-3 divide-x divide-border text-center">
           <MiniStat label="Enrolled in SRS" value={srsStats.total} />
           <MiniStat label="Due Today"       value={srsStats.due} color="text-gold" />
           <MiniStat label="Mastered (21d+)" value={srsStats.mastered} color="text-accent2" />
@@ -104,7 +104,7 @@ export default function ProgressPage() {
         <div className="space-y-2">
           {XP_GUIDE.map(item => (
             <div key={item.label} className="flex items-center justify-between text-sm">
-              <span className="text-[#9CA3AF]">{item.label}</span>
+              <span className="text-muted">{item.label}</span>
               <span className="text-gold font-bold">+{item.xp} XP</span>
             </div>
           ))}
@@ -128,7 +128,7 @@ function StatCard({ icon, label, value, color }) {
 
 function MiniStat({ label, value, color }) {
   return (
-    <div className="bg-bg3 rounded-lg p-3 border border-border">
+    <div className="px-3">
       <div className={`text-xl font-extrabold ${color || 'text-white'}`}>{value}</div>
       <div className="text-xs text-muted mt-0.5">{label}</div>
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
+import MoveLedger from '../components/ui/MoveLedger'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 import { aiCoach } from '../core/AICoach'
@@ -31,7 +32,7 @@ function SetupScreen({ playerColor, setPlayerColor, difficulty, setDifficulty, o
   return (
     <div className="flex items-center justify-center h-full p-6">
       <div className="card max-w-md w-full space-y-6">
-        <div className="text-center"><div className="text-4xl mb-2">🤖</div><h2 className="text-xl font-extrabold text-white">vs. Coach</h2><p className="text-muted text-sm mt-1">Play against the AI at your level</p></div>
+        <div className="text-center"><div className="text-4xl mb-2">🤖</div><h2 className="text-xl font-extrabold text-white font-heading">vs. Coach</h2><p className="text-muted text-sm mt-1">Play against the AI at your level</p></div>
         <div>
           <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Play as</div>
           <div className="flex gap-2">
@@ -201,8 +202,7 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
           <div className={thinking ? 'opacity-90' : ''}>
             <Chessboard position={fen} onPieceDrop={handleDrop}
               boardOrientation={playerColor === 'b' ? 'black' : 'white'}
-              arePiecesDraggable={!gameOver && !thinking}
-              customDarkSquareStyle={{ backgroundColor: '#b58863' }} customLightSquareStyle={{ backgroundColor: '#f0d9b5' }} />
+              arePiecesDraggable={!gameOver && !thinking} />
           </div>
           <div className="flex items-center gap-2 mt-2">
             <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-sm">♟</div>
@@ -211,26 +211,18 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
         </div>
       </div>
 
-      <div className="w-64 shrink-0 border-l border-border bg-[#111827] flex flex-col p-4 gap-3 overflow-y-auto">
+      <div className="w-64 shrink-0 border-l border-border bg-bg2 flex flex-col p-4 gap-3 overflow-y-auto">
         <div className={`rounded-xl px-3 py-2 text-sm font-medium text-center ${
           gameOver ? 'bg-gold/15 text-gold border border-gold/30' :
           status.includes('is in check!') ? 'bg-danger/15 text-danger border border-danger/30' :
-          'bg-bg3 text-[#9CA3AF] border border-border'}`}>
+          'bg-bg3 text-muted border border-border'}`}>
           {status || (fen.split(' ')[1] === 'w' ? "White's turn" : "Black's turn")}
         </div>
         <div className="flex-1 overflow-y-auto">
           <div className="text-xs text-muted uppercase tracking-wide font-bold mb-2">Moves</div>
-          <div className="space-y-0.5 font-mono text-xs">
-            {Array.from({ length: Math.ceil(moveList.length / 2) }, (_, i) => (
-              <div key={i} className="flex gap-2 text-[#9CA3AF]">
-                <span className="text-muted w-5">{i+1}.</span>
-                <span className="flex-1">{moveList[i*2]||''}</span>
-                <span className="flex-1">{moveList[i*2+1]||''}</span>
-              </div>
-            ))}
-          </div>
+          <MoveLedger moveList={moveList} />
         </div>
-        {tip && <div className="bg-gold/10 border border-gold/30 rounded-xl p-3 text-xs text-[#9CA3AF] leading-relaxed">💡 {tip}</div>}
+        {tip && <div className="bg-gold/10 border border-gold/30 rounded-xl p-3 text-xs text-muted leading-relaxed">💡 {tip}</div>}
         <div className="space-y-2 shrink-0">
           {!gameOver && <button onClick={askTip} className="w-full btn-ghost text-sm">💡 Ask Coach</button>}
           <button onClick={onNewGame} className="w-full btn-gold text-sm">{gameOver ? '🔄 New Game' : '↺ Resign'}</button>

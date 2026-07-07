@@ -93,8 +93,7 @@ function DrillCard({ trap, onComplete }) {
         <div className="w-full max-w-[420px]">
           <div className={`rounded-xl overflow-hidden transition-all duration-200 ${flash==='correct'?'ring-2 ring-accent2':flash==='wrong'?'ring-2 ring-danger':''}`}>
             <Chessboard position={fen} onPieceDrop={handleDrop}
-              boardOrientation={trap.color==='black'?'black':'white'}
-              customDarkSquareStyle={{backgroundColor:'#b58863'}} customLightSquareStyle={{backgroundColor:'#f0d9b5'}} />
+              boardOrientation={trap.color==='black'?'black':'white'} />
           </div>
           <div className="mt-3 flex flex-wrap gap-1">
             {trap.moves.map((m,i) => (
@@ -105,10 +104,10 @@ function DrillCard({ trap, onComplete }) {
           </div>
         </div>
       </div>
-      <div className="w-64 shrink-0 border-l border-border bg-[#111827] p-4 flex flex-col gap-3">
+      <div className="w-64 shrink-0 border-l border-border bg-bg2 p-4 flex flex-col gap-3">
         <div><div className="font-bold text-white">{trap.name}</div><div className="text-xs text-muted mt-0.5">{trap.opening}</div></div>
         <div className="text-xs text-muted uppercase tracking-wide font-bold">🎯 Play the moves from memory</div>
-        <div className="text-sm text-[#9CA3AF]">{trap.description}</div>
+        <div className="text-sm text-muted">{trap.description}</div>
       </div>
     </div>
   )
@@ -121,7 +120,7 @@ function RateCard({ trap, onRate }) {
         <div><div className="text-4xl mb-3">✅</div><div className="font-bold text-white text-xl">{trap.name}</div><div className="text-muted text-sm mt-1">How well did you remember this?</div></div>
         <div className="grid grid-cols-3 gap-3">
           {[{label:'Hard',quality:1,color:'border-danger/40 hover:border-danger text-danger'},{label:'Good',quality:2,color:'border-accent/40 hover:border-accent text-accent'},{label:'Easy',quality:3,color:'border-accent2/40 hover:border-accent2 text-accent2'}].map(r => (
-            <button key={r.quality} onClick={() => onRate(r.quality)} className={`p-4 rounded-xl border bg-bg3 transition-all hover:scale-105 active:scale-95 ${r.color}`}>
+            <button key={r.quality} onClick={() => onRate(r.quality)} className={`p-4 rounded-xl border bg-bg3 transition-colors active:scale-95 ${r.color}`}>
               <div className="font-bold">{r.label}</div>
             </button>
           ))}

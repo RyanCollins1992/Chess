@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
+import { THEMES, DEFAULT_THEME_ID } from '../styles/themes'
+import { PIECE_STYLES, DEFAULT_PIECE_STYLE_ID } from '../styles/pieceStyles'
+import { TEMPO_THEME } from '../styles/tempo'
 
 export default function SettingsPage() {
   const { settings, updateSettings, showToast, refreshProgress } = useAppStore()
   const [confirmReset, setConfirmReset] = useState(false)
   const [elo, setElo] = useState(progressManager.currentElo)
+  const visualMode = settings.visualMode || 'medieval'
 
   const save = (key, value) => {
     updateSettings({ [key]: value })
@@ -31,7 +35,7 @@ export default function SettingsPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold text-white">Settings</h2>
+        <h2 className="text-2xl font-extrabold text-white font-heading">Settings</h2>
         <p className="text-muted text-sm mt-1">Customise your EloChess experience</p>
       </div>
 
@@ -39,7 +43,7 @@ export default function SettingsPage() {
       <Section title="👤 Profile">
         <div className="space-y-3">
           <div>
-            <label className="text-sm font-medium text-[#9CA3AF] block mb-1.5">Your ELO Rating</label>
+            <label className="text-sm font-medium text-muted block mb-1.5">Your ELO Rating</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -54,7 +58,7 @@ export default function SettingsPage() {
             <p className="text-xs text-muted mt-1">Used to calibrate difficulty and track improvement</p>
           </div>
           <div>
-            <label className="text-sm font-medium text-[#9CA3AF] block mb-1.5">Chess.com Username</label>
+            <label className="text-sm font-medium text-muted block mb-1.5">Chess.com Username</label>
             <input
               type="text"
               defaultValue={settings.chesscomUsername || ''}
@@ -65,6 +69,79 @@ export default function SettingsPage() {
           </div>
         </div>
       </Section>
+
+      {/* Visual mode */}
+      <Section title="✦ Visual Mode">
+        <div className="flex gap-2">
+          <button
+            onClick={() => save('visualMode', 'medieval')}
+            className={`flex-1 text-left p-2.5 rounded-lg border transition-colors ${
+              visualMode === 'medieval' ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
+            }`}
+          >
+            <div className={`text-xs font-bold ${visualMode === 'medieval' ? 'text-gold' : 'text-white'}`}>Medieval</div>
+            <div className="text-[11px] text-muted mt-0.5">The 8 themes below, plus switchable piece art.</div>
+          </button>
+          <button
+            onClick={() => save('visualMode', 'tempo')}
+            className={`flex-1 text-left p-2.5 rounded-lg border transition-colors ${
+              visualMode === 'tempo' ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
+            }`}
+          >
+            <div className={`text-xs font-bold ${visualMode === 'tempo' ? 'text-gold' : 'text-white'}`}>Tempo</div>
+            <div className="text-[11px] text-muted mt-0.5">{TEMPO_THEME.description}</div>
+          </button>
+        </div>
+      </Section>
+
+      {/* Theme — only meaningful in Medieval mode */}
+      {visualMode !== 'tempo' && <Section title="🎨 Theme">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {THEMES.map(theme => {
+            const active = (settings.theme || DEFAULT_THEME_ID) === theme.id
+            return (
+              <button
+                key={theme.id}
+                onClick={() => save('theme', theme.id)}
+                title={theme.description}
+                className={`text-left p-2.5 rounded-lg border transition-colors ${
+                  active ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
+                }`}
+              >
+                <div className="flex gap-1 mb-1.5">
+                  {[theme.colors.bg, theme.colors.gold, theme.colors.accent, theme.colors.accent2].map((c, i) => (
+                    <span key={i} className="w-3.5 h-3.5 rounded-full border border-border/50" style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+                <div className={`text-xs font-bold ${active ? 'text-gold' : 'text-white'}`}>{theme.name}</div>
+              </button>
+            )
+          })}
+        </div>
+      </Section>}
+
+      {/* Piece Style — only meaningful in Medieval mode; Tempo always uses
+          its own typographic glyph set (see Chessboard.jsx). */}
+      {visualMode !== 'tempo' && <Section title="♞ Piece Style">
+        <div className="grid grid-cols-2 gap-2">
+          {PIECE_STYLES.map(style => {
+            const active = (settings.pieceStyle || DEFAULT_PIECE_STYLE_ID) === style.id
+            return (
+              <button
+                key={style.id}
+                onClick={() => save('pieceStyle', style.id)}
+                title={style.description}
+                className={`text-left p-2.5 rounded-lg border transition-colors ${
+                  active ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
+                }`}
+              >
+                <div className={`text-xs font-bold ${active ? 'text-gold' : 'text-white'}`}>{style.name}</div>
+                <div className="text-[11px] text-muted mt-0.5">{style.description}</div>
+              </button>
+            )
+          })}
+        </div>
+      </Section>}
 
       {/* Board */}
       <Section title="♟ Board">
@@ -87,24 +164,6 @@ export default function SettingsPage() {
             value={settings.sounds !== false}
             onChange={v => save('sounds', v)}
           />
-          <div>
-            <label className="text-sm font-medium text-[#9CA3AF] block mb-1.5">Board theme</label>
-            <div className="flex gap-2">
-              {['classic', 'walnut', 'slate', 'ocean'].map(theme => (
-                <button
-                  key={theme}
-                  onClick={() => save('boardTheme', theme)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors capitalize ${
-                    (settings.boardTheme || 'classic') === theme
-                      ? 'border-gold text-gold bg-gold/10'
-                      : 'border-border text-muted hover:text-white'
-                  }`}
-                >
-                  {theme}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </Section>
 
@@ -124,7 +183,7 @@ export default function SettingsPage() {
             onChange={v => save('showHints', v)}
           />
           <div>
-            <label className="text-sm font-medium text-[#9CA3AF] block mb-1.5">Daily review target</label>
+            <label className="text-sm font-medium text-muted block mb-1.5">Daily review target</label>
             <div className="flex gap-2">
               {[10, 20, 30, 50].map(n => (
                 <button
@@ -166,6 +225,15 @@ export default function SettingsPage() {
               <a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">source</a>),
               licensed under the{' '}
               <a href="https://www.gnu.org/licenses/gpl-3.0.txt" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">GNU GPL v3</a>.
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-white mb-1">Chess Pieces</div>
+            <p className="text-muted">
+              Piece artwork is the{' '}
+              <a href="https://github.com/maurimo/chess-art" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">"Fantasy" set</a>{' '}
+              by Maurizio Monge, licensed under the{' '}
+              <a href="https://github.com/maurimo/chess-art/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">MIT License</a>.
             </p>
           </div>
           <div>

@@ -4,7 +4,7 @@ import { Chess } from 'chess.js'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 
-const LEVEL_COLORS = { beginner: 'text-green-400', intermediate: 'text-yellow-400', advanced: 'text-red-400' }
+const LEVEL_COLORS = { beginner: 'text-accent2', intermediate: 'text-gold', advanced: 'text-danger' }
 
 const OPENINGS = [
   {
@@ -412,7 +412,7 @@ export default function LearnOpeningsPage() {
   return (
     <div className="flex h-full overflow-hidden">
       {/* Left — opening families */}
-      <div className="w-52 shrink-0 border-r border-border bg-[#111827] flex flex-col overflow-y-auto">
+      <div className="w-52 shrink-0 border-r border-border bg-bg2 flex flex-col overflow-y-auto">
         <div className="p-3 border-b border-border shrink-0">
           <div className="font-bold text-white text-sm">Opening Theory</div>
           <div className="text-xs text-muted mt-0.5">Tap to explore</div>
@@ -432,7 +432,7 @@ export default function LearnOpeningsPage() {
       </div>
 
       {/* Middle — lines list */}
-      <div className="w-48 shrink-0 border-r border-border bg-[#111827] flex flex-col overflow-y-auto">
+      <div className="w-48 shrink-0 border-r border-border bg-bg2 flex flex-col overflow-y-auto">
         <div className="p-3 border-b border-border shrink-0 text-xs text-muted uppercase tracking-wide font-bold">
           Lines
         </div>
@@ -467,8 +467,6 @@ export default function LearnOpeningsPage() {
                 position={fen}
                 onPieceDrop={({ sourceSquare, targetSquare }) => !!tryMove(sourceSquare, targetSquare)}
                 boardOrientation={selected.color === 'black' ? 'black' : 'white'}
-                customDarkSquareStyle={{ backgroundColor: '#b58863' }}
-                customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
               />
               <div className="mt-3 flex flex-wrap gap-1">
                 {selectedLine.moves.map((m, i) => (
@@ -489,15 +487,15 @@ export default function LearnOpeningsPage() {
           </div>
 
           {/* Info */}
-          <div className="w-64 shrink-0 border-l border-border bg-[#111827] p-4 flex flex-col gap-4 overflow-y-auto">
+          <div className="w-64 shrink-0 border-l border-border bg-bg2 p-4 flex flex-col gap-4 overflow-y-auto">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <div className="font-extrabold text-white text-lg leading-tight">{selectedLine.name}</div>
                 {selectedLine.level && (
                   <span className={`text-[10px] font-bold uppercase shrink-0 px-2 py-0.5 rounded-full border ${
-                    selectedLine.level === 'beginner' ? 'text-green-400 border-green-400/30 bg-green-400/10' :
-                    selectedLine.level === 'intermediate' ? 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' :
-                    'text-red-400 border-red-400/30 bg-red-400/10'
+                    selectedLine.level === 'beginner' ? 'text-accent2 border-accent2/30 bg-accent2/10' :
+                    selectedLine.level === 'intermediate' ? 'text-gold border-gold/30 bg-gold/10' :
+                    'text-danger border-danger/30 bg-danger/10'
                   }`}>
                     {selectedLine.level}
                   </span>
@@ -506,14 +504,14 @@ export default function LearnOpeningsPage() {
               <div className="text-xs text-muted mt-0.5 font-mono">{selectedLine.moves.join(' ')}</div>
             </div>
 
-            <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-[#9CA3AF] leading-relaxed">
+            <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-muted leading-relaxed">
               💡 {selectedLine.idea}
             </div>
 
             <div className="space-y-1">
               <div className="text-xs font-bold text-accent2 uppercase tracking-wide">✅ Pros</div>
               {selectedLine.pros.map((p, i) => (
-                <div key={i} className="text-xs text-[#9CA3AF] flex gap-1.5">
+                <div key={i} className="text-xs text-muted flex gap-1.5">
                   <span className="text-accent2 shrink-0">+</span>{p}
                 </div>
               ))}
@@ -522,7 +520,7 @@ export default function LearnOpeningsPage() {
             <div className="space-y-1">
               <div className="text-xs font-bold text-danger uppercase tracking-wide">⚠️ Cons</div>
               {selectedLine.cons.map((c, i) => (
-                <div key={i} className="text-xs text-[#9CA3AF] flex gap-1.5">
+                <div key={i} className="text-xs text-muted flex gap-1.5">
                   <span className="text-danger shrink-0">−</span>{c}
                 </div>
               ))}

@@ -51,7 +51,7 @@ export default function RateDifficultyPage() {
       <div className="px-6 pt-5 pb-3 border-b border-border shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-xl font-extrabold text-white">Rate Difficulty</h2>
+            <h2 className="text-xl font-extrabold text-white font-heading">Rate Difficulty</h2>
             <p className="text-muted text-sm mt-0.5">Star each trap — Spaced Review drills hard ones more often</p>
           </div>
           <div className="text-right">
@@ -136,9 +136,9 @@ function TrapRateRow({ trap, rating, onRate }) {
   const [hovered, setHovered] = useState(0)
 
   const levelColors = {
-    beginner:     'text-green-400 bg-green-900/30 border-green-800/40',
-    intermediate: 'text-yellow-400 bg-yellow-900/30 border-yellow-800/40',
-    advanced:     'text-red-400 bg-red-900/30 border-red-800/40',
+    beginner:     'text-accent2 bg-accent2/30 border-accent2/40',
+    intermediate: 'text-gold bg-gold/30 border-gold/40',
+    advanced:     'text-danger bg-danger/30 border-danger/40',
   }
 
   const studyCount = progressManager.getTrapStudyCount(trap.id)
@@ -175,12 +175,12 @@ function TrapRateRow({ trap, rating, onRate }) {
             key={star}
             onClick={() => onRate(trap.id, rating === star ? 0 : star)}
             onMouseEnter={() => setHovered(star)}
-            className="text-xl transition-all hover:scale-110 active:scale-95"
+            className="text-xl transition-colors active:scale-95"
             title={star === 1 ? 'Easy' : star === 2 ? 'Medium' : 'Hard'}
           >
             <span className={
               (hovered ? star <= hovered : star <= rating)
-                ? star === 1 ? 'text-green-400' : star === 2 ? 'text-yellow-400' : 'text-red-400'
+                ? star === 1 ? 'text-accent2' : star === 2 ? 'text-gold' : 'text-danger'
                 : 'text-bg3'
             }>
               ★

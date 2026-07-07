@@ -23,9 +23,9 @@ export default function MatePatternsPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="w-64 shrink-0 border-r border-border bg-[#111827] flex flex-col">
+      <div className="w-64 shrink-0 border-r border-border bg-bg2 flex flex-col">
         <div className="p-3 border-b border-border shrink-0">
-          <h2 className="font-bold text-white mb-2">Mate Patterns</h2>
+          <h2 className="font-bold text-white mb-2 font-heading">Mate Patterns</h2>
           <div className="flex flex-wrap gap-1">
             {CATEGORIES.map(c => <button key={c} onClick={() => setCategory(c)} className={`px-2 py-1 text-xs font-bold rounded-lg transition-colors ${category === c ? 'bg-gold text-bg' : 'bg-bg3 text-muted border border-border hover:text-white'}`}>{c}</button>)}
           </div>
@@ -83,18 +83,17 @@ function PatternViewer({ pattern, isLearned, onLearned }) {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-[420px]">
           <div className={`rounded-xl overflow-hidden transition-all duration-200 ${flash === 'correct' || solved ? 'ring-2 ring-accent2' : flash === 'wrong' ? 'ring-2 ring-danger' : ''}`}>
-            <Chessboard position={fen} onPieceDrop={handleDrop} arePiecesDraggable={!pattern.isDemo && !solved}
-              customDarkSquareStyle={{ backgroundColor: '#b58863' }} customLightSquareStyle={{ backgroundColor: '#f0d9b5' }} />
+            <Chessboard position={fen} onPieceDrop={handleDrop} arePiecesDraggable={!pattern.isDemo && !solved} />
           </div>
           {pattern.isDemo && <div className="mt-2 text-center text-xs text-muted">📖 Study position — no moves required</div>}
         </div>
       </div>
-      <div className="w-72 shrink-0 border-l border-border bg-[#111827] flex flex-col p-4 gap-4 overflow-y-auto">
+      <div className="w-72 shrink-0 border-l border-border bg-bg2 flex flex-col p-4 gap-4 overflow-y-auto">
         <div><div className="text-2xl mb-1">{pattern.icon}</div><div className="font-bold text-white text-lg">{pattern.name}</div><div className="text-xs text-muted">{pattern.category} pattern</div></div>
-        <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-[#9CA3AF] leading-relaxed">{pattern.desc}</div>
+        <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-muted leading-relaxed">{pattern.desc}</div>
         {solved || pattern.isDemo
-          ? <div className="bg-accent2/10 border border-accent2/30 rounded-xl p-3"><div className="text-xs font-bold text-accent2 mb-1">✅ Explanation</div><p className="text-sm text-[#9CA3AF]">{pattern.explanation}</p></div>
-          : <div className="bg-gold/10 border border-gold/30 rounded-xl p-3 text-sm text-[#9CA3AF]">🎯 Find the checkmate move!</div>}
+          ? <div className="bg-accent2/10 border border-accent2/30 rounded-xl p-3"><div className="text-xs font-bold text-accent2 mb-1">✅ Explanation</div><p className="text-sm text-muted">{pattern.explanation}</p></div>
+          : <div className="bg-gold/10 border border-gold/30 rounded-xl p-3 text-sm text-muted">🎯 Find the checkmate move!</div>}
         <div className="space-y-2 mt-auto">
           {!pattern.isDemo && !solved && <button onClick={reset} className="w-full btn-ghost text-sm">↺ Reset</button>}
           {!isLearned && (pattern.isDemo || solved) && <button onClick={onLearned} className="w-full btn-gold text-sm">✓ Mark as Learned</button>}

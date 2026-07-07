@@ -17,15 +17,15 @@ export default function EndgamesPage() {
   const [selected, setSelected] = useState(null)
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="w-64 shrink-0 border-r border-border bg-[#111827] flex flex-col overflow-y-auto">
-        <div className="p-4 border-b border-border shrink-0"><h2 className="font-bold text-white">Endgame Trainer</h2><p className="text-xs text-muted mt-1">Master the essential endings</p></div>
+      <div className="w-64 shrink-0 border-r border-border bg-bg2 flex flex-col overflow-y-auto">
+        <div className="p-4 border-b border-border shrink-0"><h2 className="font-bold text-white font-heading">Endgame Trainer</h2><p className="text-xs text-muted mt-1">Master the essential endings</p></div>
         {SCENARIOS.map(s => (
           <button key={s.id} onClick={() => setSelected(s)} className={`w-full text-left px-4 py-3 border-b border-border/50 hover:bg-bg3 transition-colors ${selected?.id === s.id ? 'bg-gold/10 border-l-2 border-gold pl-3' : ''}`}>
             <div className="flex items-center gap-3">
               <span className="text-2xl">{s.icon}</span>
               <div>
                 <div className={`text-sm font-semibold ${selected?.id === s.id ? 'text-gold' : 'text-white'}`}>{s.name}</div>
-                <div className={`text-[10px] font-bold uppercase mt-0.5 ${s.level === 'Beginner' ? 'text-green-400' : s.level === 'Intermediate' ? 'text-yellow-400' : 'text-red-400'}`}>{s.level}</div>
+                <div className={`text-[10px] font-bold uppercase mt-0.5 ${s.level === 'Beginner' ? 'text-accent2' : s.level === 'Intermediate' ? 'text-gold' : 'text-danger'}`}>{s.level}</div>
               </div>
             </div>
           </button>
@@ -98,8 +98,7 @@ function EndgameBoard({ scenario }) {
           <div className={`rounded-xl overflow-hidden transition-all duration-200 ${flash === 'correct' ? 'ring-2 ring-accent2' : flash === 'wrong' ? 'ring-2 ring-danger' : complete ? 'ring-2 ring-gold' : ''}`}>
             <Chessboard position={fen} onPieceDrop={handleDrop}
               boardOrientation={scenario.playerColor === 'b' ? 'black' : 'white'}
-              arePiecesDraggable={!complete}
-              customDarkSquareStyle={{ backgroundColor: '#b58863' }} customLightSquareStyle={{ backgroundColor: '#f0d9b5' }} />
+              arePiecesDraggable={!complete} />
           </div>
           <div className="mt-3 flex items-center justify-between text-sm">
             <span className="text-muted">Moves: <span className={moves > scenario.par ? 'text-danger' : 'text-white'}>{moves}</span></span>
@@ -108,16 +107,16 @@ function EndgameBoard({ scenario }) {
           </div>
         </div>
       </div>
-      <div className="w-72 shrink-0 border-l border-border bg-[#111827] flex flex-col p-4 gap-4 overflow-y-auto">
+      <div className="w-72 shrink-0 border-l border-border bg-bg2 flex flex-col p-4 gap-4 overflow-y-auto">
         <div><div className="font-bold text-white text-lg">{scenario.name}</div><div className="text-sm text-muted mt-1">{scenario.task}</div></div>
         {complete ? <div className="bg-gold/10 border border-gold/30 rounded-xl p-4 text-center"><div className="text-gold font-bold text-lg">🏆 Complete!</div><div className="text-muted text-sm mt-1">{moves <= scenario.par ? `Par! ${moves} moves` : `${moves} moves (par: ${scenario.par})`}</div></div> :
-          <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-[#9CA3AF]">🎯 {scenario.task}</div>}
+          <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-muted">🎯 {scenario.task}</div>}
         <div className="space-y-2">
           <button onClick={() => { setShowHint(!showHint); setHintIdx(i => Math.min(i+1, scenario.hints.length-1)) }} className="w-full btn-ghost text-sm">💡 Hint {hintIdx > 0 ? `(${hintIdx}/${scenario.hints.length})` : ''}</button>
-          {showHint && <div className="bg-gold/10 border border-gold/30 rounded-lg p-3 text-sm text-[#9CA3AF]">{scenario.hints[hintIdx] || scenario.hints[0]}</div>}
+          {showHint && <div className="bg-gold/10 border border-gold/30 rounded-lg p-3 text-sm text-muted">{scenario.hints[hintIdx] || scenario.hints[0]}</div>}
           <button onClick={reset} className="w-full btn-ghost text-sm">↺ Restart</button>
         </div>
-        <div className="border-t border-border pt-3"><div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">💡 Key Concept</div><p className="text-sm text-[#9CA3AF] leading-relaxed">{scenario.lesson}</p></div>
+        <div className="border-t border-border pt-3"><div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">💡 Key Concept</div><p className="text-sm text-muted leading-relaxed">{scenario.lesson}</p></div>
       </div>
     </div>
   )

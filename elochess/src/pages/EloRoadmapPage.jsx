@@ -126,7 +126,7 @@ export default function EloRoadmapPage() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-6 pt-5 pb-4 border-b border-border shrink-0">
-        <h2 className="text-xl font-extrabold text-white">ELO Roadmap</h2>
+        <h2 className="text-xl font-extrabold text-white font-heading">ELO Roadmap</h2>
         <p className="text-muted text-sm mt-0.5">Your structured path to chess improvement</p>
         <div className="mt-3 flex items-center gap-3">
           <div className="bg-bg3 border border-border rounded-lg px-3 py-1.5 text-sm">
@@ -189,7 +189,7 @@ export default function EloRoadmapPage() {
                     <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">✅ Goals at this level</div>
                     <ul className="space-y-1.5">
                       {stage.goals.map((goal, j) => (
-                        <li key={j} className="flex items-start gap-2 text-sm text-[#9CA3AF]">
+                        <li key={j} className="flex items-start gap-2 text-sm text-muted">
                           <span className="text-gold shrink-0 mt-0.5">→</span>
                           {goal}
                         </li>

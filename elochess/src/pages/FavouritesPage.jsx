@@ -37,7 +37,7 @@ export default function FavouritesPage() {
       <div className="px-6 pt-5 pb-3 border-b border-border shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-xl font-extrabold text-white">Favourites</h2>
+            <h2 className="text-xl font-extrabold text-white font-heading">Favourites</h2>
             <p className="text-muted text-sm mt-0.5">{favs.length} trap{favs.length !== 1 ? 's' : ''} saved</p>
           </div>
         </div>
@@ -112,9 +112,9 @@ function TrapRow({ trap, isFav, onToggle, onStudy }) {
   const inSRS      = srsEngine.isEnrolled(trap.id)
 
   const levelColors = {
-    beginner:     'text-green-400',
-    intermediate: 'text-yellow-400',
-    advanced:     'text-red-400',
+    beginner:     'text-accent2',
+    intermediate: 'text-gold',
+    advanced:     'text-danger',
   }
 
   return (
@@ -137,7 +137,7 @@ function TrapRow({ trap, isFav, onToggle, onStudy }) {
         {inSRS && <span className="text-xs text-accent">🔁</span>}
         <button
           onClick={(e) => { e.stopPropagation(); onToggle() }}
-          className={`text-xl transition-all hover:scale-110 active:scale-95 ${isFav ? 'text-gold' : 'text-muted hover:text-gold'}`}
+          className={`text-xl transition-colors active:scale-95 ${isFav ? 'text-gold' : 'text-muted hover:text-gold'}`}
           title={isFav ? 'Remove from favourites' : 'Add to favourites'}
         >
           {isFav ? '★' : '☆'}

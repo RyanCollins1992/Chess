@@ -66,7 +66,7 @@ export default function AICoachPanel({ open, onClose, onOpen }) {
       {/* Panel */}
       <div className={`
         fixed bottom-4 right-4 z-50 w-80 sm:w-96 flex flex-col
-        bg-[#1a1f2e] border border-border rounded-2xl shadow-card
+        bg-bg2 border border-border rounded-2xl shadow-card
         transition-all duration-300 origin-bottom-right
         ${open ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
       `} style={{ maxHeight: '520px' }}>
@@ -175,7 +175,7 @@ export default function AICoachPanel({ open, onClose, onOpen }) {
       {!open && (
         <button
           onClick={onOpen}
-          className="fixed bottom-4 right-4 z-40 w-14 h-14 bg-gold rounded-full shadow-gold flex items-center justify-center text-bg text-2xl hover:bg-gold2 transition-all active:scale-95 hover:scale-110"
+          className="fixed bottom-4 right-4 z-40 w-14 h-14 bg-gold rounded-full shadow-card flex items-center justify-center text-bg text-2xl hover:bg-gold2 transition-colors active:scale-95"
         >
           ♞
         </button>

@@ -253,8 +253,14 @@ export default function GameReviewPage() {
 
   const currentAnalysis = analysis[currentIdx - 1] || null
 
+  // Reads the active theme's own gold/accent token (medieval or Tempo's
+  // Brass) rather than a hardcoded hex, so the arrow retints with everything
+  // else — see squareStyleFor/frameStyleFor in Chessboard.jsx for the same pattern.
+  const goldVar = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--color-gold').trim() || '#f5b731'
+    : '#f5b731'
   const bestMoveArrow = currentAnalysis?.bestMove
-    ? [{ startSquare: currentAnalysis.bestMove.slice(0, 2), endSquare: currentAnalysis.bestMove.slice(2, 4), color: '#f5b73199' }]
+    ? [{ startSquare: currentAnalysis.bestMove.slice(0, 2), endSquare: currentAnalysis.bestMove.slice(2, 4), color: `${goldVar}99` }]
     : []
 
   const betterSan = currentAnalysis && currentAnalysis.betterMove &&
@@ -278,8 +284,6 @@ export default function GameReviewPage() {
             position={currentFen}
             arePiecesDraggable={false}
             boardOrientation={game.color === 'Black' ? 'black' : 'white'}
-            customDarkSquareStyle={{ backgroundColor: '#b58863' }}
-            customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
             arrows={bestMoveArrow}
           />
         </div>
@@ -302,7 +306,7 @@ export default function GameReviewPage() {
       </div>
 
       {/* Right panel */}
-      <div className="w-72 shrink-0 border-l border-border bg-[#111827] flex flex-col overflow-hidden">
+      <div className="w-72 shrink-0 border-l border-border bg-bg2 flex flex-col overflow-hidden">
         {/* Game info */}
         <div className="p-4 border-b border-border shrink-0">
           <div className="flex items-start justify-between gap-2">
@@ -396,13 +400,13 @@ function EvalBar({ eval: ev }) {
 
   return (
     <div className="flex items-center gap-2 h-5">
-      <div className="flex-1 h-3 bg-[#2a2a2a] rounded-full overflow-hidden relative">
+      <div className="flex-1 h-3 bg-bg3 rounded-full overflow-hidden relative">
         <div
-          className="h-full bg-[#f0d9b5] transition-all duration-500 ease-out absolute left-0 top-0"
+          className="h-full bg-gold transition-all duration-500 ease-out absolute left-0 top-0"
           style={{ width: `${whitePct}%` }}
         />
       </div>
-      <div className={`text-xs font-bold font-mono w-14 text-right tabular-nums ${ev >= 0 ? 'text-[#f0d9b5]' : 'text-muted'}`}>
+      <div className={`text-xs font-bold font-mono w-14 text-right tabular-nums ${ev >= 0 ? 'text-gold' : 'text-muted'}`}>
         {sign}{display}
       </div>
     </div>
@@ -429,7 +433,7 @@ function MoveChip({ move, an, active, onClick }) {
     <button
       onClick={onClick}
       className={`flex-1 text-left px-1.5 py-0.5 rounded transition-colors ${
-        active ? 'bg-gold/20 text-gold' : 'text-[#9CA3AF] hover:bg-bg3'
+        active ? 'bg-gold/20 text-gold' : 'text-muted hover:bg-bg3'
       }`}
     >
       {move}
@@ -516,7 +520,7 @@ function ImportPanel({ onGameLoaded }) {
       <div className="w-full max-w-lg space-y-5 pt-6">
         <div>
           <div className="text-4xl mb-3 opacity-20">♜</div>
-          <h2 className="text-xl font-extrabold text-white">Load a Game</h2>
+          <h2 className="text-xl font-extrabold text-white font-heading">Load a Game</h2>
           <p className="text-sm text-muted mt-1">Paste PGN, or fetch a game from a Lichess link</p>
         </div>
         <div className="flex gap-2">

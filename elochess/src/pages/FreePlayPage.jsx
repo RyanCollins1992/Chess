@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
+import MoveLedger from '../components/ui/MoveLedger'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 
@@ -68,24 +69,23 @@ export default function FreePlayPage() {
         <div className="w-full max-w-[500px]">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-7 h-7 rounded-full bg-bg3 border border-border flex items-center justify-center text-sm">{orientation === 'white' ? '♚' : '♔'}</div>
-            <div className="text-sm text-[#9CA3AF]">{orientation === 'white' ? 'Black' : 'White'}</div>
+            <div className="text-sm text-muted">{orientation === 'white' ? 'Black' : 'White'}</div>
           </div>
           <Chessboard position={fen} onPieceDrop={handleDrop} boardOrientation={orientation}
-            customSquareStyles={customSquareStyles}
-            customDarkSquareStyle={{ backgroundColor: '#b58863' }} customLightSquareStyle={{ backgroundColor: '#f0d9b5' }} />
+            customSquareStyles={customSquareStyles} />
           <div className="flex items-center gap-2 mt-2">
             <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-sm">{orientation === 'white' ? '♔' : '♚'}</div>
-            <div className="text-sm text-[#9CA3AF]">{orientation === 'white' ? 'White' : 'Black'}</div>
+            <div className="text-sm text-muted">{orientation === 'white' ? 'White' : 'Black'}</div>
             <div className="ml-auto text-xs text-muted">Move {Math.ceil(moveList.length / 2)}</div>
           </div>
         </div>
       </div>
 
-      <div className="w-64 shrink-0 border-l border-border bg-[#111827] flex flex-col p-4 gap-3 overflow-hidden">
+      <div className="w-64 shrink-0 border-l border-border bg-bg2 flex flex-col p-4 gap-3 overflow-hidden">
         <div className={`rounded-xl px-3 py-2 text-sm font-medium text-center ${
           gameOver ? 'bg-gold/15 text-gold border border-gold/30' :
           isCheck  ? 'bg-danger/15 text-danger border border-danger/30' :
-          'bg-bg3 text-[#9CA3AF] border border-border'}`}>
+          'bg-bg3 text-muted border border-border'}`}>
           {status || 'White to move'}
         </div>
 
@@ -97,17 +97,7 @@ export default function FreePlayPage() {
 
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="text-xs text-muted uppercase tracking-wide font-bold mb-2">Moves</div>
-          {moveList.length === 0 ? <div className="text-xs text-muted italic">No moves yet</div> : (
-            <div className="space-y-0.5 font-mono text-xs">
-              {Array.from({ length: Math.ceil(moveList.length / 2) }, (_, i) => (
-                <div key={i} className="flex gap-2 text-[#9CA3AF]">
-                  <span className="text-muted w-5">{i+1}.</span>
-                  <span className="flex-1">{moveList[i*2] || ''}</span>
-                  <span className="flex-1 text-muted">{moveList[i*2+1] || ''}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <MoveLedger moveList={moveList} />
         </div>
 
         <div className="shrink-0 border-t border-border pt-3 space-y-2">

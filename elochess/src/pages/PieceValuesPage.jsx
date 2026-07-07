@@ -2,37 +2,37 @@ import { useState } from 'react'
 
 const PIECES = [
   {
-    id: 'pawn', symbol: '♟', name: 'Pawn', value: 1, color: '#f0d9b5',
+    id: 'pawn', symbol: '♟', name: 'Pawn', value: 1, color: '#d4bc8c',
     desc: 'The backbone of chess. Pawns are worth 1 point each. Though weak individually, they are powerful in groups and can promote to any piece when they reach the other side.',
     tips: ['Pawns protect each other in chains', 'Passed pawns are very strong', 'Connected pawns are better than isolated ones', 'A promoted pawn becomes a queen!'],
     exchanges: ['A pawn for a pawn is equal', 'Never give up 2 pawns for nothing', 'Pawn + tempo can win endgames'],
   },
   {
-    id: 'knight', symbol: '♞', name: 'Knight', value: 3, color: '#b58863',
+    id: 'knight', symbol: '♞', name: 'Knight', value: 3, color: '#7a5232',
     desc: 'Worth about 3 pawns. Knights are the only pieces that can jump over others. They are strongest in closed positions and weakest near the edges of the board.',
     tips: ['Knights on the rim are dim!', 'Outposts make knights very powerful', 'Knights shine in closed positions', 'Takes 4+ moves to cross the board'],
     exchanges: ['Knight ≈ Bishop (3 points)', 'Bishop pair beats 2 knights in open positions', 'Knight beats bishop in closed positions'],
   },
   {
-    id: 'bishop', symbol: '♝', name: 'Bishop', value: 3, color: '#f0d9b5',
+    id: 'bishop', symbol: '♝', name: 'Bishop', value: 3, color: '#d4bc8c',
     desc: 'Also worth about 3 pawns. Bishops cover long diagonals and excel in open positions. Having two bishops (the "bishop pair") is a significant advantage.',
     tips: ['Bishops love open diagonals', 'Two bishops are very powerful together', 'A bad bishop is blocked by its own pawns', 'Always try to keep your bishop pair'],
     exchanges: ['Bishop ≈ Knight (3 points)', 'Bishop pair = +0.5 bonus', 'Bad bishop for good knight can be worth it'],
   },
   {
-    id: 'rook', symbol: '♜', name: 'Rook', value: 5, color: '#b58863',
+    id: 'rook', symbol: '♜', name: 'Rook', value: 5, color: '#7a5232',
     desc: 'Worth 5 pawns — a major piece. Rooks need open files to be effective. They are most powerful in the endgame where they can dominate open boards.',
     tips: ['Rooks belong on open files', 'Double rooks on the 7th rank is devastating', 'Rooks behind passed pawns are ideal', 'Connect your rooks early'],
     exchanges: ['Rook vs Bishop+Pawn is roughly equal', 'Two rooks often beat a queen', 'Exchanging into a rook endgame is often a good technique'],
   },
   {
-    id: 'queen', symbol: '♛', name: 'Queen', value: 9, color: '#f0d9b5',
+    id: 'queen', symbol: '♛', name: 'Queen', value: 9, color: '#d4bc8c',
     desc: 'The most powerful piece, worth about 9 pawns. Combines the power of rook and bishop. Be careful — a queen alone cannot checkmate; she needs support.',
     tips: ['Don\'t develop the queen too early', 'A queen can be harassed by minor pieces', 'Queen + knight often works well together', 'Queen alone cannot force checkmate'],
     exchanges: ['Queen vs 3 minor pieces is roughly equal', 'Queen vs 2 rooks depends on the position', 'Winning the queen for a rook is "winning the exchange"'],
   },
   {
-    id: 'king', symbol: '♔', name: 'King', value: null, color: '#b58863',
+    id: 'king', symbol: '♔', name: 'King', value: null, color: '#7a5232',
     desc: 'The king has infinite value — losing it means losing the game! In the endgame, the king becomes a powerful attacking piece worth roughly 4 points of activity.',
     tips: ['Castle early to keep your king safe', 'In the endgame, activate your king!', 'The king is a fighting piece in the endgame', 'Opposition is the key king concept'],
     exchanges: ['King cannot be traded', 'King safety > material in the middlegame', 'King activity is crucial in the endgame'],
@@ -124,7 +124,7 @@ export default function PieceValuesPage() {
   return (
     <div className="flex h-full overflow-hidden">
       {/* Left — piece selector */}
-      <div className="w-48 shrink-0 border-r border-border bg-[#111827] flex flex-col">
+      <div className="w-48 shrink-0 border-r border-border bg-bg2 flex flex-col">
         <div className="p-4 border-b border-border">
           <div className="font-bold text-white text-sm">Piece Values</div>
           <div className="text-xs text-muted mt-0.5">Tap to learn</div>
@@ -158,7 +158,7 @@ export default function PieceValuesPage() {
               <span className="text-6xl">{selected.symbol}</span>
             </div>
             <div>
-              <h2 className="text-3xl font-extrabold text-white">{selected.name}</h2>
+              <h2 className="text-3xl font-extrabold text-white font-heading">{selected.name}</h2>
               <div className="flex items-center gap-2 mt-1">
                 {selected.value ? (
                   <>
@@ -178,7 +178,7 @@ export default function PieceValuesPage() {
 
           {/* Description */}
           <div className="card">
-            <p className="text-[#9CA3AF] leading-relaxed">{selected.desc}</p>
+            <p className="text-muted leading-relaxed">{selected.desc}</p>
           </div>
 
           {/* Tips */}
@@ -186,7 +186,7 @@ export default function PieceValuesPage() {
             <div className="text-xs font-bold text-muted uppercase tracking-wide">💡 Key Tips</div>
             <ul className="space-y-2">
               {selected.tips.map((tip, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-[#9CA3AF]">
+                <li key={i} className="flex items-start gap-2 text-sm text-muted">
                   <span className="text-gold mt-0.5 shrink-0">→</span>
                   {tip}
                 </li>
@@ -199,7 +199,7 @@ export default function PieceValuesPage() {
             <div className="text-xs font-bold text-muted uppercase tracking-wide">⚖️ Trading Guidelines</div>
             <ul className="space-y-2">
               {selected.exchanges.map((ex, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-[#9CA3AF]">
+                <li key={i} className="flex items-start gap-2 text-sm text-muted">
                   <span className="text-accent mt-0.5 shrink-0">•</span>
                   {ex}
                 </li>

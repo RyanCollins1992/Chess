@@ -59,7 +59,7 @@ export default function OpeningsPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="w-72 shrink-0 border-r border-border flex flex-col bg-[#111827] overflow-hidden">
+      <div className="w-72 shrink-0 border-r border-border flex flex-col bg-bg2 overflow-hidden">
         <div className="p-3 border-b border-border space-y-2 shrink-0">
           <div className="flex gap-1">
             {[{ id: 'white', label: 'White' }, { id: 'black', label: 'Black' }, { id: 'mates', label: 'Mates' }].map(tab => (
@@ -82,9 +82,9 @@ export default function OpeningsPage() {
               {openingsByLevel.map(({ level, lines }) => (
                 <div key={level}>
                   <div className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border-b border-border/50 ${
-                    level === 'beginner' ? 'text-green-400 bg-green-400/5' :
-                    level === 'intermediate' ? 'text-yellow-400 bg-yellow-400/5' :
-                    'text-red-400 bg-red-400/5'
+                    level === 'beginner' ? 'text-accent2 bg-accent2/5' :
+                    level === 'intermediate' ? 'text-gold bg-gold/5' :
+                    'text-danger bg-danger/5'
                   }`}>
                     {level}
                   </div>
@@ -125,9 +125,9 @@ export default function OpeningsPage() {
                     return (
                       <div key={level}>
                         <div className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border-b border-border/50 ${
-                          level === 'beginner' ? 'text-green-400 bg-green-400/5' :
-                          level === 'intermediate' ? 'text-yellow-400 bg-yellow-400/5' :
-                          'text-red-400 bg-red-400/5'
+                          level === 'beginner' ? 'text-accent2 bg-accent2/5' :
+                          level === 'intermediate' ? 'text-gold bg-gold/5' :
+                          'text-danger bg-danger/5'
                         }`}>
                           {level}
                         </div>
@@ -160,7 +160,7 @@ export default function OpeningsPage() {
 }
 
 function TrapListItem({ trap, active, onClick, studyCount, inSRS }) {
-  const levelColors = { beginner: 'text-green-400', intermediate: 'text-yellow-400', advanced: 'text-red-400' }
+  const levelColors = { beginner: 'text-accent2', intermediate: 'text-gold', advanced: 'text-danger' }
   return (
     <button onClick={onClick} className={`w-full text-left px-4 py-3 border-b border-border/50 transition-colors hover:bg-bg3 ${active ? 'bg-gold/10 border-l-2 border-gold pl-3' : ''}`}>
       <div className="flex items-start justify-between gap-2">
@@ -361,8 +361,6 @@ function TrapStudy({ trap, showToast }) {
               onPieceDrop={handleDrop}
               boardOrientation={trap.color === 'black' ? 'black' : 'white'}
               customBoardStyle={{ borderRadius: '8px' }}
-              customDarkSquareStyle={{ backgroundColor: '#b58863' }}
-              customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
               arePiecesDraggable={!complete && !browseMode}
             />
           </div>
@@ -416,9 +414,9 @@ function TrapStudy({ trap, showToast }) {
       </div>
 
       {/* Right panel */}
-      <div className="w-72 shrink-0 border-l border-border bg-[#111827] flex flex-col overflow-y-auto">
+      <div className="w-72 shrink-0 border-l border-border bg-bg2 flex flex-col overflow-y-auto">
         <div className="p-4 border-b border-border">
-          <h2 className="font-extrabold text-white text-lg">{trap.name}</h2>
+          <h2 className="font-extrabold text-white text-lg font-heading">{trap.name}</h2>
           <div className="text-muted text-sm mt-0.5">{trap.opening}</div>
           {studyCount > 0 && (
             <span className="text-xs bg-accent2/15 text-accent2 border border-accent2/30 px-2 py-0.5 rounded-full font-medium mt-2 inline-block">
@@ -436,7 +434,7 @@ function TrapStudy({ trap, showToast }) {
               </div>
             </div>
           ) : browseMode ? (
-            <div className="bg-accent/10 border border-accent/30 rounded-xl p-3 text-sm text-[#9CA3AF]">
+            <div className="bg-accent/10 border border-accent/30 rounded-xl p-3 text-sm text-muted">
               📖 Browsing moves — click Prev/Next or tap a move
             </div>
           ) : (
@@ -457,7 +455,7 @@ function TrapStudy({ trap, showToast }) {
 
         <div className="p-4 border-t border-border">
           <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">💡 Key Concept</div>
-          <p className="text-sm text-[#9CA3AF] leading-relaxed">{trap.description}</p>
+          <p className="text-sm text-muted leading-relaxed">{trap.description}</p>
         </div>
       </div>
     </div>
@@ -492,8 +490,6 @@ function RepertoireStudy({ line, group }) {
               boardOrientation={group?.color === 'black' ? 'black' : 'white'}
               arePiecesDraggable={false}
               customBoardStyle={{ borderRadius: '8px' }}
-              customDarkSquareStyle={{ backgroundColor: '#b58863' }}
-              customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
             />
           </div>
 
@@ -536,15 +532,15 @@ function RepertoireStudy({ line, group }) {
         </div>
       </div>
 
-      <div className="w-72 shrink-0 border-l border-border bg-[#111827] flex flex-col overflow-y-auto">
+      <div className="w-72 shrink-0 border-l border-border bg-bg2 flex flex-col overflow-y-auto">
         <div className="p-4 border-b border-border">
           <div className="flex items-start justify-between gap-2">
-            <h2 className="font-extrabold text-white text-lg leading-tight">{line.name}</h2>
+            <h2 className="font-extrabold text-white text-lg leading-tight font-heading">{line.name}</h2>
             {line.level && (
               <span className={`text-[10px] font-bold uppercase shrink-0 px-2 py-0.5 rounded-full border mt-1 ${
-                line.level === 'beginner' ? 'text-green-400 border-green-400/30 bg-green-400/10' :
-                line.level === 'intermediate' ? 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' :
-                'text-red-400 border-red-400/30 bg-red-400/10'
+                line.level === 'beginner' ? 'text-accent2 border-accent2/30 bg-accent2/10' :
+                line.level === 'intermediate' ? 'text-gold border-gold/30 bg-gold/10' :
+                'text-danger border-danger/30 bg-danger/10'
               }`}>
                 {line.level}
               </span>
@@ -554,7 +550,7 @@ function RepertoireStudy({ line, group }) {
         </div>
         <div className="p-4 border-b border-border">
           <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">💡 Main Idea</div>
-          <p className="text-sm text-[#9CA3AF] leading-relaxed">{line.idea}</p>
+          <p className="text-sm text-muted leading-relaxed">{line.idea}</p>
         </div>
         <div className="p-4">
           <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Move Order</div>

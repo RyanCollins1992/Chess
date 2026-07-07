@@ -101,8 +101,6 @@ export default function OpeningQuizPage() {
               position={q.fen}
               arePiecesDraggable={false}
               boardOrientation={q.trap.color === 'black' ? 'black' : 'white'}
-              customDarkSquareStyle={{ backgroundColor: '#b58863' }}
-              customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
             />
           </div>
 
@@ -114,7 +112,7 @@ export default function OpeningQuizPage() {
       </div>
 
       {/* Right — question + options */}
-      <div className="w-72 shrink-0 border-l border-border bg-[#111827] flex flex-col p-4 gap-4">
+      <div className="w-72 shrink-0 border-l border-border bg-bg2 flex flex-col p-4 gap-4">
         <div>
           <div className="text-xs text-muted uppercase tracking-wide font-bold mb-1">Question {index + 1}</div>
           <div className="font-bold text-white text-base">What opening/trap is this?</div>
@@ -175,7 +173,7 @@ function SetupScreen({ quizSize, setQuizSize, onStart }) {
       <div className="card max-w-md w-full space-y-6">
         <div className="text-center">
           <div className="text-4xl mb-2">❓</div>
-          <h2 className="text-xl font-extrabold text-white">Opening Quiz</h2>
+          <h2 className="text-xl font-extrabold text-white font-heading">Opening Quiz</h2>
           <p className="text-muted text-sm mt-1">Identify the opening from the board position</p>
         </div>
 
@@ -196,7 +194,7 @@ function SetupScreen({ quizSize, setQuizSize, onStart }) {
           </div>
         </div>
 
-        <div className="card bg-bg3 space-y-2 text-sm text-[#9CA3AF]">
+        <div className="card bg-bg3 space-y-2 text-sm text-muted">
           <div className="font-bold text-white text-xs uppercase tracking-wide">How it works</div>
           <p>You'll see a board position from a trap or opening. Pick the correct name from 4 options. The faster you recognise patterns, the better your opening knowledge!</p>
         </div>
