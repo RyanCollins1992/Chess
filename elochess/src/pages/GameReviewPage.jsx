@@ -121,6 +121,7 @@ export default function GameReviewPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [progress, setProgress]   = useState(0)
   const [sfReady, setSfReady]     = useState(false)
+  const [activeTab, setActiveTab] = useState('analysis')
   const engineRef = useRef(null)
   const showToast = useAppStore(s => s.showToast)
   // Deliberately not seeded from `game`: this page remounts fresh every time
@@ -139,6 +140,7 @@ export default function GameReviewPage() {
       setMoves(parsePGN(game.pgn))
       setCurrentIdx(0)
       setAnalysis([])
+      setActiveTab('analysis')
     }
   }
 
@@ -244,6 +246,7 @@ export default function GameReviewPage() {
 
     setAnalysis(results)
     setAnalyzing(false)
+    setActiveTab('report')
     showToast('✅ Analysis complete!', 'success')
   }
 
@@ -347,45 +350,74 @@ export default function GameReviewPage() {
           </div>
         )}
 
-        {/* Summary stats */}
-        {analysis.length > 0 && (
-          <div className="p-3 border-b border-border shrink-0">
-            <AnalysisSummary analysis={analysis} color={game.color} />
-          </div>
-        )}
+        {/* Tabs */}
+        <div className="flex gap-4 border-b border-border px-3 pt-2.5 shrink-0">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`text-[11px] font-mono uppercase tracking-wider pb-2.5 border-b-2 transition-colors ${
+                activeTab === t.id ? 'text-white border-gold' : 'text-muted border-transparent hover:text-white/70'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-        {/* Move list */}
         <div className="flex-1 overflow-y-auto p-3">
-          <div className="space-y-0.5">
-            {Array.from({ length: Math.ceil(moves.length / 2) }, (_, i) => {
-              const wIdx = i * 2
-              const bIdx = i * 2 + 1
-              const wMove = moves[wIdx]
-              const bMove = moves[bIdx]
-              const wAn   = analysis[wIdx]
-              const bAn   = analysis[bIdx]
-              return (
-                <div key={i} className="flex items-center gap-1 text-xs font-mono">
-                  <span className="text-muted w-6 text-right shrink-0">{i+1}.</span>
-                  <MoveChip
-                    move={wMove?.san} an={wAn}
-                    active={currentIdx === wIdx + 1}
-                    onClick={() => setCurrentIdx(wIdx + 1)}
-                  />
-                  <MoveChip
-                    move={bMove?.san} an={bAn}
-                    active={currentIdx === bIdx + 1}
-                    onClick={() => setCurrentIdx(bIdx + 1)}
-                  />
-                </div>
-              )
-            })}
-          </div>
+          {activeTab === 'report' && (
+            analysis.length > 0
+              ? <AnalysisSummary analysis={analysis} color={game.color} />
+              : <TabPlaceholder text="Run analysis to see your report." />
+          )}
+
+          {activeTab === 'keyMoments' && (
+            analysis.length > 0
+              ? <KeyMoments analysis={analysis} onJump={setCurrentIdx} />
+              : <TabPlaceholder text="Run analysis to see key moments." />
+          )}
+
+          {activeTab === 'analysis' && (
+            <div className="space-y-0.5">
+              {Array.from({ length: Math.ceil(moves.length / 2) }, (_, i) => {
+                const wIdx = i * 2
+                const bIdx = i * 2 + 1
+                const wMove = moves[wIdx]
+                const bMove = moves[bIdx]
+                const wAn   = analysis[wIdx]
+                const bAn   = analysis[bIdx]
+                return (
+                  <div key={i} className="flex items-center gap-1 text-xs font-mono">
+                    <span className="text-muted w-6 text-right shrink-0">{i+1}.</span>
+                    <MoveChip
+                      move={wMove?.san} an={wAn}
+                      active={currentIdx === wIdx + 1}
+                      onClick={() => setCurrentIdx(wIdx + 1)}
+                    />
+                    <MoveChip
+                      move={bMove?.san} an={bAn}
+                      active={currentIdx === bIdx + 1}
+                      onClick={() => setCurrentIdx(bIdx + 1)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
+
+// Report / Key moments / Analysis — matches the Tempo design doc's
+// "Tabs — game review" component (mono, uppercase, brass underline).
+const TABS = [
+  { id: 'report',     label: 'Report' },
+  { id: 'keyMoments', label: 'Key moments' },
+  { id: 'analysis',   label: 'Analysis' },
+]
 
 // ── Sub-components ────────────────────────────────────────────────
 
@@ -481,29 +513,71 @@ function AnalysisSummary({ analysis, color }) {
     : null
 
   return (
-    <div className="space-y-2">
+    <div>
       {accuracy != null && (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted font-medium">Your accuracy</span>
-          <span className={`text-sm font-extrabold ${accuracy >= 80 ? 'text-accent2' : accuracy >= 60 ? 'text-gold' : 'text-danger'}`}>
+        <div className="flex items-center justify-between pb-3 mb-1 border-b border-border">
+          <span className="text-xs text-muted font-medium uppercase tracking-wide">Your accuracy</span>
+          <span className={`text-lg font-extrabold font-mono tabular-nums ${accuracy >= 80 ? 'text-accent2' : accuracy >= 60 ? 'text-gold' : 'text-danger'}`}>
             {accuracy}%
           </span>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-1">
-        {ORDER.filter(k => counts[k]).map(k => {
-          const cls = CLASSIFICATIONS[k]
-          return (
-            <div key={k} className="flex items-center gap-1.5 text-xs">
-              <span style={{ color: cls.color }}>{cls.symbol}</span>
-              <span className="text-muted">{cls.label}</span>
-              <span className="text-white font-bold ml-auto">{counts[k]}</span>
-            </div>
-          )
-        })}
-      </div>
+      {ORDER.filter(k => counts[k]).map(k => {
+        const cls = CLASSIFICATIONS[k]
+        return <QualityRow key={k} color={cls.color} label={cls.label} count={counts[k]} />
+      })}
     </div>
   )
+}
+
+function QualityRow({ color, label, count }) {
+  return (
+    <div className="flex items-center justify-between text-[13px] py-1.5 border-b border-border last:border-none">
+      <span className="flex items-center gap-2 text-muted">
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+        {label}
+      </span>
+      <span className="text-white font-mono tabular-nums">{count}</span>
+    </div>
+  )
+}
+
+// Blunders, misses, and the standout moves worth revisiting — the
+// classifications that mark a swing in the game, not routine good moves.
+const KEY_MOMENT_TYPES = ['BRILLIANT', 'GREAT', 'BLUNDER', 'MISS', 'MISTAKE']
+
+function KeyMoments({ analysis, onJump }) {
+  const moments = analysis
+    .map((a, i) => ({ ...a, idx: i + 1 }))
+    .filter(a => KEY_MOMENT_TYPES.includes(a.classification))
+
+  if (moments.length === 0) {
+    return <TabPlaceholder text="No key moments — a clean, steady game." />
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {moments.map(m => {
+        const cls = CLASSIFICATIONS[m.classification]
+        return (
+          <button
+            key={m.idx}
+            onClick={() => onJump(m.idx)}
+            className="w-full flex items-center gap-2 text-left px-1.5 py-1.5 rounded-lg hover:bg-bg3 transition-colors"
+          >
+            <span className="text-sm font-bold w-5 shrink-0 text-center" style={{ color: cls.color }}>{cls.symbol}</span>
+            <span className="text-xs text-muted font-mono w-8 shrink-0">{m.moveNum}.</span>
+            <span className="text-sm text-white font-mono flex-1 truncate">{m.move}</span>
+            <span className="text-[10px] font-medium shrink-0" style={{ color: cls.color }}>{cls.label}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function TabPlaceholder({ text }) {
+  return <div className="text-xs text-muted text-center py-6">{text}</div>
 }
 
 // ── Import panel (shown when no game is loaded) ───────────────────

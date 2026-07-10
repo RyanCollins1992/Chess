@@ -23,7 +23,7 @@ const PAGE_TITLES = {
   'settings':       { icon: '⚙', title: 'Settings' },
 }
 
-export default function Topbar({ onCoachClick }) {
+export default function Topbar({ onCoachClick, onPaletteClick }) {
   const { currentPage, toggleSidebar, progress, navigate } = useAppStore()
   const page = PAGE_TITLES[currentPage] || { icon: '♟', title: 'EloChess' }
 
@@ -59,6 +59,16 @@ export default function Topbar({ onCoachClick }) {
           <span className="text-base">✵</span>
           <span className="font-bold text-sm">{progress.xpToday}</span>
         </div>
+
+        {/* Command palette */}
+        <button
+          onClick={onPaletteClick}
+          className="hidden sm:flex items-center gap-2 text-muted hover:text-white transition-colors bg-bg3 border border-border rounded-lg px-2.5 py-1.5 text-xs"
+          aria-label="Search (Cmd+K)"
+        >
+          <span>Search…</span>
+          <kbd className="font-mono text-[10px] bg-bg border border-border rounded px-1">⌘K</kbd>
+        </button>
 
         {/* Coach button */}
         <button

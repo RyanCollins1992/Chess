@@ -12,6 +12,9 @@
  * the rest are dark, matching the moodboard's swatches.
  */
 
+import { TEMPO_THEME } from './tempo'
+import { PLY_THEME } from './ply'
+
 export const THEMES = [
   {
     id: 'illuminated-manuscript',
@@ -171,3 +174,14 @@ export const THEMES = [
 export const DEFAULT_THEME_ID = 'medieval-tavern'
 
 export const getTheme = (id) => THEMES.find(t => t.id === id) || THEMES.find(t => t.id === DEFAULT_THEME_ID)
+
+// Resolves visualMode + the medieval theme id down to one active theme
+// object. Tempo/Ply aren't in THEMES (see tempo.js/ply.js for why) — this
+// used to be a `visualMode === 'tempo' ? TEMPO_THEME : getTheme(themeId)`
+// ternary duplicated in AppLayout.jsx and Chessboard.jsx; extracted here
+// once a third mode made that worth not copy-pasting a third time.
+export const getActiveTheme = (visualMode, themeId) => {
+  if (visualMode === 'tempo') return TEMPO_THEME
+  if (visualMode === 'ply') return PLY_THEME
+  return getTheme(themeId)
+}

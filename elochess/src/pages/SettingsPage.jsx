@@ -1,16 +1,16 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
 import { THEMES, DEFAULT_THEME_ID } from '../styles/themes'
 import { PIECE_STYLES, DEFAULT_PIECE_STYLE_ID } from '../styles/pieceStyles'
 import { TEMPO_THEME } from '../styles/tempo'
+import { PLY_THEME } from '../styles/ply'
 
 export default function SettingsPage() {
   const { settings, updateSettings, showToast, refreshProgress } = useAppStore()
-  const [confirmReset, setConfirmReset] = useState(false)
   const [elo, setElo] = useState(progressManager.currentElo)
-  const visualMode = settings.visualMode || 'medieval'
+  const visualMode = settings.visualMode || 'tempo'
 
   const save = (key, value) => {
     updateSettings({ [key]: value })
@@ -26,7 +26,6 @@ export default function SettingsPage() {
   }
 
   const handleReset = () => {
-    if (!confirmReset) { setConfirmReset(true); return }
     localStorage.clear()
     showToast('All data cleared — refreshing…', 'info')
     setTimeout(() => window.location.reload(), 1500)
@@ -91,11 +90,20 @@ export default function SettingsPage() {
             <div className={`text-xs font-bold ${visualMode === 'tempo' ? 'text-gold' : 'text-white'}`}>Tempo</div>
             <div className="text-[11px] text-muted mt-0.5">{TEMPO_THEME.description}</div>
           </button>
+          <button
+            onClick={() => save('visualMode', 'ply')}
+            className={`flex-1 text-left p-2.5 rounded-lg border transition-colors ${
+              visualMode === 'ply' ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
+            }`}
+          >
+            <div className={`text-xs font-bold ${visualMode === 'ply' ? 'text-gold' : 'text-white'}`}>Ply</div>
+            <div className="text-[11px] text-muted mt-0.5">{PLY_THEME.description}</div>
+          </button>
         </div>
       </Section>
 
       {/* Theme — only meaningful in Medieval mode */}
-      {visualMode !== 'tempo' && <Section title="🎨 Theme">
+      {visualMode === 'medieval' && <Section title="🎨 Theme">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {THEMES.map(theme => {
             const active = (settings.theme || DEFAULT_THEME_ID) === theme.id
@@ -120,9 +128,9 @@ export default function SettingsPage() {
         </div>
       </Section>}
 
-      {/* Piece Style — only meaningful in Medieval mode; Tempo always uses
-          its own typographic glyph set (see Chessboard.jsx). */}
-      {visualMode !== 'tempo' && <Section title="♞ Piece Style">
+      {/* Piece Style — only meaningful in Medieval mode; Tempo and Ply always
+          use their own typographic glyph sets (see Chessboard.jsx). */}
+      {visualMode === 'medieval' && <Section title="♞ Piece Style">
         <div className="grid grid-cols-2 gap-2">
           {PIECE_STYLES.map(style => {
             const active = (settings.pieceStyle || DEFAULT_PIECE_STYLE_ID) === style.id
@@ -203,16 +211,29 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* Stats */}
+      {/* Stats — a bento grid in Tempo/Ply (streak gets visual weight instead
+          of every stat being treated equally), unchanged uniform grid in
+          medieval (design review, concept 03). */}
       <Section title="📊 Your Stats">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <StatRow label="Total XP" value={progressManager.xpTotal} />
-          <StatRow label="Current Level" value={progressManager.level} />
-          <StatRow label="Day Streak" value={`${progressManager.streak} days`} />
-          <StatRow label="SRS Cards" value={srsEngine.getStats().total} />
-          <StatRow label="Cards Mastered" value={srsEngine.getStats().mastered} />
-          <StatRow label="Total Drills" value={progressManager.totalDrills} />
-        </div>
+        {(visualMode === 'tempo' || visualMode === 'ply') ? (
+          <div className="grid grid-cols-4 gap-2" style={{ gridAutoRows: '76px' }}>
+            <BentoTile className="col-span-2 row-span-2" label="Day streak" value={progressManager.streak} sub="days" big />
+            <BentoTile className="col-span-2" label="Total XP" value={progressManager.xpTotal} />
+            <BentoTile label="Level" value={progressManager.level} />
+            <BentoTile label="SRS cards" value={srsEngine.getStats().total} />
+            <BentoTile label="Mastered" value={srsEngine.getStats().mastered} tone="sage" />
+            <BentoTile label="Drills" value={progressManager.totalDrills} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <StatRow label="Total XP" value={progressManager.xpTotal} />
+            <StatRow label="Current Level" value={progressManager.level} />
+            <StatRow label="Day Streak" value={`${progressManager.streak} days`} />
+            <StatRow label="SRS Cards" value={srsEngine.getStats().total} />
+            <StatRow label="Cards Mastered" value={srsEngine.getStats().mastered} />
+            <StatRow label="Total Drills" value={progressManager.totalDrills} />
+          </div>
+        )}
       </Section>
 
       {/* Licenses & Credits */}
@@ -267,21 +288,9 @@ export default function SettingsPage() {
       <Section title="⚠️ Data" danger>
         <div className="space-y-3">
           <p className="text-sm text-muted">This will permanently delete all your progress, XP, badges, and SRS data.</p>
-          <button
-            onClick={handleReset}
-            className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${
-              confirmReset
-                ? 'bg-danger text-white border-danger'
-                : 'bg-bg3 text-danger border-danger/40 hover:border-danger'
-            }`}
-          >
-            {confirmReset ? '⚠️ Click again to confirm reset' : 'Reset All Progress'}
-          </button>
-          {confirmReset && (
-            <button onClick={() => setConfirmReset(false)} className="text-xs text-muted hover:text-white ml-3">
-              Cancel
-            </button>
-          )}
+          <HoldButton onComplete={handleReset} className="px-4 py-2 rounded-lg text-sm font-bold border bg-bg3 text-danger border-danger/40 hover:border-danger">
+            Hold to reset all progress
+          </HoldButton>
         </div>
       </Section>
     </div>
@@ -317,11 +326,65 @@ function ToggleRow({ label, desc, value, onChange }) {
   )
 }
 
+// Irreversible actions ("Reset All Progress") require a 600ms press-and-hold
+// with a filling ring instead of a tap-then-confirm dialog — per the Tempo
+// design doc's "Premium interactions" brief (fewer clicks, and physically
+// harder to trigger by accident than a second tap). Interaction model, not
+// just visual polish, so it applies in both visual modes.
+function HoldButton({ onComplete, holdMs = 600, className = '', children }) {
+  const [holding, setHolding] = useState(false)
+  const timerRef = useRef(null)
+
+  const start = () => {
+    setHolding(true)
+    timerRef.current = setTimeout(() => {
+      setHolding(false)
+      onComplete()
+    }, holdMs)
+  }
+  const cancel = () => {
+    clearTimeout(timerRef.current)
+    setHolding(false)
+  }
+
+  return (
+    <button
+      onMouseDown={start}
+      onMouseUp={cancel}
+      onMouseLeave={cancel}
+      onTouchStart={start}
+      onTouchEnd={cancel}
+      onContextMenu={e => e.preventDefault()}
+      className={`relative overflow-hidden select-none transition-colors ${className}`}
+    >
+      <span
+        className="absolute inset-0 bg-danger/40 origin-left pointer-events-none"
+        style={{
+          transform: `scaleX(${holding ? 1 : 0})`,
+          transition: holding ? `transform ${holdMs}ms linear` : 'transform 100ms ease-out',
+        }}
+      />
+      <span className="relative">{children}</span>
+    </button>
+  )
+}
+
 function StatRow({ label, value }) {
   return (
     <div className="flex items-center justify-between bg-bg3 rounded-lg px-3 py-2 border border-border">
       <span className="text-muted">{label}</span>
       <span className="font-bold text-white">{value}</span>
+    </div>
+  )
+}
+
+function BentoTile({ label, value, sub, big, tone, className = '' }) {
+  return (
+    <div className={`bg-bg3 border border-border rounded-xl px-3 py-2.5 flex flex-col justify-between ${className}`}>
+      <span className="text-[10px] font-mono uppercase tracking-wide text-muted">{label}</span>
+      <span className={`font-mono font-extrabold tabular-nums ${big ? 'text-3xl' : 'text-xl'} ${tone === 'sage' ? 'text-accent2' : 'text-white'}`}>
+        {value}{sub && <span className="text-xs font-normal text-muted ml-1">{sub}</span>}
+      </span>
     </div>
   )
 }

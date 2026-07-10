@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
+import Badge from '../components/ui/Badge'
 
 const ROADMAP = [
   {
@@ -107,8 +108,29 @@ const ROADMAP = [
   },
 ]
 
+// Tempo-mode recolor of the same 6-tier progression — the design doc calls
+// for the tiers to stay static/non-theme-reactive (as already decided; see
+// the `gray`/`green`/etc. comment in tailwind.config.js) but to run through
+// Sage → Ochre → Oxblood → Brass instead of Tailwind's stock palette. Four
+// colors across six tiers, paired two tiers per color.
+const TEMPO_TIER_STYLES = [
+  { color: 'border-[#8CB088]/50 bg-[#8CB088]/10', badge: 'text-[#8CB088]' }, // sage
+  { color: 'border-[#8CB088]/50 bg-[#8CB088]/10', badge: 'text-[#8CB088]' }, // sage
+  { color: 'border-[#D9A24B]/50 bg-[#D9A24B]/10', badge: 'text-[#D9A24B]' }, // ochre
+  { color: 'border-[#D9A24B]/50 bg-[#D9A24B]/10', badge: 'text-[#D9A24B]' }, // ochre
+  { color: 'border-[#C9636F]/50 bg-[#C9636F]/10', badge: 'text-[#C9636F]' }, // oxblood
+  { color: 'border-[#B08D5A]/50 bg-[#B08D5A]/10', badge: 'text-[#B08D5A]' }, // brass
+]
+
+// Ply's "spend your boldness in one place" brief doesn't fit a 4-color tier
+// rainbow — every tier gets the same quiet neutral card, and the current
+// tier is singled out by its accent-colored sweep-frame ring alone (below),
+// not by any per-tier hue.
+const PLY_TIER_STYLE = { color: 'border-border bg-bg3', badge: 'text-muted' }
+
 export default function EloRoadmapPage() {
   const navigate  = useAppStore(s => s.navigate)
+  const visualMode = useAppStore(s => s.settings.visualMode) || 'tempo'
   const currentElo = progressManager.currentElo
   const [expanded, setExpanded] = useState(null)
 
@@ -145,12 +167,14 @@ export default function EloRoadmapPage() {
           const isCurrent = i === currentStage
           const isDone    = i < currentStage
           const isOpen    = expanded === i || isCurrent
+          const tierStyle = visualMode === 'tempo' ? TEMPO_TIER_STYLES[i] : visualMode === 'ply' ? PLY_TIER_STYLE : stage
 
-          return (
+          const sweeps = isCurrent && (visualMode === 'tempo' || visualMode === 'ply')
+
+          const card = (
             <div
-              key={stage.range}
-              className={`rounded-xl border transition-all ${stage.color} ${
-                isCurrent ? 'ring-1 ring-gold/40' : ''
+              className={`rounded-xl border transition-all ${tierStyle.color} ${
+                isCurrent && !sweeps ? 'ring-1 ring-gold/40' : ''
               }`}
             >
               {/* Stage header */}
@@ -171,11 +195,9 @@ export default function EloRoadmapPage() {
                     <span className={`font-bold text-sm ${isDone ? 'text-muted' : 'text-white'}`}>
                       {stage.title}
                     </span>
-                    {isCurrent && (
-                      <span className="text-[10px] font-bold bg-gold text-bg px-1.5 py-0.5 rounded-full">YOU ARE HERE</span>
-                    )}
+                    {isCurrent && <Badge tone="brass" variant="solid">You are here</Badge>}
                   </div>
-                  <div className={`text-xs mt-0.5 ${stage.badge}`}>{stage.range} ELO · {stage.focus}</div>
+                  <div className={`text-xs mt-0.5 ${tierStyle.badge}`}>{stage.range} ELO · {stage.focus}</div>
                 </div>
 
                 <span className="text-muted text-sm shrink-0">{isOpen ? '▲' : '▼'}</span>
@@ -216,6 +238,11 @@ export default function EloRoadmapPage() {
               )}
             </div>
           )
+
+          return sweeps
+            ? <div key={stage.range} className="sweep-frame">{card}</div>
+            : <div key={stage.range}>{card}</div>
+
         })}
       </div>
     </div>

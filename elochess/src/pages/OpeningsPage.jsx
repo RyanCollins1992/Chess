@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
+import MoveLedger from '../components/ui/MoveLedger'
 import { Chess } from 'chess.js'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useOpeningsStore } from '../store/useOpeningsStore'
@@ -392,24 +393,14 @@ function TrapStudy({ trap, showToast }) {
             </button>
           </div>
 
-          {/* Move notation */}
-          <div className="mt-2 flex flex-wrap gap-1">
-            {trap.moves.map((m, i) => (
-              <span
-                key={i}
-                onClick={() => {
-                  if (browseMode) setBrowseIdx(i + 1)
-                  else setDrillPreviewIdx(i + 1)
-                }}
-                className={`text-xs font-mono px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                  browseMode
-                    ? i + 1 === browseIdx ? 'text-gold bg-gold/20 font-bold' : 'text-muted hover:text-white'
-                    : i < moveIdx ? 'text-accent2 bg-accent2/10' : i === moveIdx ? 'text-gold bg-gold/10 font-bold' : 'text-muted'
-                }`}>
-                {i % 2 === 0 ? `${Math.floor(i/2)+1}.` : ''}{m}
-              </span>
-            ))}
-          </div>
+          {/* Move notation — a scoresheet ledger you step through, not a
+              slideshow (Tempo design doc, "Openings / Learn" brief) */}
+          <MoveLedger
+            moveList={trap.moves}
+            activeIdx={currentMoveNum - 1}
+            onMoveClick={i => browseMode ? setBrowseIdx(i + 1) : setDrillPreviewIdx(i + 1)}
+            className="mt-2"
+          />
         </div>
       </div>
 

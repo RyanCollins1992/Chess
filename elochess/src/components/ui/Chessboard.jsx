@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { Chessboard as RawChessboard } from 'react-chessboard'
 import { ChessEngine } from '../../core/ChessEngine'
 import { useAppStore } from '../../store/useAppStore'
-import { getTheme, DEFAULT_THEME_ID } from '../../styles/themes'
-import { TEMPO_THEME } from '../../styles/tempo'
+import { getActiveTheme, DEFAULT_THEME_ID } from '../../styles/themes'
 import { DEFAULT_PIECE_STYLE_ID } from '../../styles/pieceStyles'
+import { DURATION } from '../../styles/motion'
 
 // "Fantasy" piece set by Maurizio Monge (github.com/maurimo/chess-art),
 // MIT licensed — see the About & Licenses section in SettingsPage.jsx.
@@ -117,6 +117,27 @@ const MEDALLION_PIECES = Object.fromEntries(
 // instead of illustrated/photoreal artwork — pieces *are* typography, per
 // the Tempo design brief (2026-07-07). No per-theme recoloring needed since
 // Tempo's board squares are fixed (Paper/Graphite) regardless of app mode.
+//
+// The wrapper uses position:absolute + inset:0 rather than width/height:100%
+// — the same react-chessboard wrapper-div height-collapse bug documented on
+// HERALDIC_PIECES above (fixed there 2026-07-07) also silently affected this
+// glyph-based wrapper: it never actually got the square's real height, just
+// wasn't obvious until Ply's serif glyphs made the resulting tiny/off-center
+// piece visible enough to notice (2026-07-10). Confirmed via direct DOM
+// measurement that Tempo pieces had the identical collapsed-height box.
+//
+// Separately, fontSize as a plain "%" is a percentage of the *inherited*
+// font-size (cascaded from body, ~16px) — completely unrelated to this
+// wrapper's actual pixel size — so the glyph rendered at a fixed ~12px
+// regardless of how big the square actually was. Fixed with a CSS
+// container-query: the outer div establishes container-type: inline-size,
+// and a nested inner span sizes its font in `cqw` (% of the outer div's
+// own width). These have to be two different elements — making the SAME
+// div both the query container and the thing sized in cqw is a genuine
+// cyclic dependency in practice (measured: Chromium fell back to resolving
+// cqw against the viewport instead, producing a 1008px glyph that spilled
+// across the whole board) even though inset:0 makes the div's box
+// independent of its own content in theory.
 const TEMPO_GLYPHS = {
   wP: '♙', wR: '♖', wN: '♘', wB: '♗', wQ: '♕', wK: '♔',
   bP: '♟', bR: '♜', bN: '♞', bB: '♝', bQ: '♛', bK: '♚',
@@ -127,25 +148,64 @@ const TEMPO_PIECES = Object.fromEntries(
     return [code, () => (
       <div
         style={{
-          width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-          fontSize: '76%', lineHeight: 1, pointerEvents: 'none',
-          color: isWhite ? '#F4F1E8' : '#17161A',
-          // White pieces need a dark outline to stay legible on the light
-          // (Paper-colored) squares — its own fill is too close to Paper's
-          // hex to read by color contrast alone, same reason every digital
-          // chess set outlines its white pieces regardless of square color.
-          WebkitTextStroke: isWhite ? '1.25px #17161A' : 'none',
-          textShadow: isWhite ? '0 1px 1.5px rgba(0,0,0,0.5)' : 'none',
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          containerType: 'inline-size', pointerEvents: 'none',
         }}
       >
-        {glyph}
+        <span
+          style={{
+            fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+            fontSize: '68cqw', lineHeight: 1,
+            color: isWhite ? '#F4F1E8' : '#17161A',
+            // White pieces need a dark outline to stay legible on the light
+            // (Paper-colored) squares — its own fill is too close to Paper's
+            // hex to read by color contrast alone, same reason every digital
+            // chess set outlines its white pieces regardless of square color.
+            WebkitTextStroke: isWhite ? '1.25px #17161A' : 'none',
+            textShadow: isWhite ? '0 1px 1.5px rgba(0,0,0,0.5)' : 'none',
+          }}
+        >
+          {glyph}
+        </span>
       </div>
     )]
   })
 )
 
-const PIECE_SETS = { fantasy: FANTASY_PIECES, heraldic: HERALDIC_PIECES, medallion: MEDALLION_PIECES, tempo: TEMPO_PIECES }
+// "Ply" piece style: the same "pieces are typography" idea as Tempo above,
+// but set in Ply's own serif italic display face (Newsreader) instead of a
+// mono display font — matches the "Ply" concept artifact (2026-07-10).
+// Ply's board squares are fixed (stone light/dark) regardless of app mode,
+// same rationale as Tempo's fixed Paper/Graphite board. Uses the same
+// position:absolute + inset:0 wrapper fix, and the same two-element
+// container/cqw split, as TEMPO_PIECES above.
+const PLY_PIECES = Object.fromEntries(
+  Object.entries(TEMPO_GLYPHS).map(([code, glyph]) => {
+    const isWhite = code[0] === 'w'
+    return [code, () => (
+      <div
+        style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          containerType: 'inline-size', pointerEvents: 'none',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Newsreader', Georgia, serif",
+            fontSize: '70cqw', lineHeight: 1,
+            color: isWhite ? '#F6F3EA' : '#1B1C18',
+            WebkitTextStroke: isWhite ? '1.1px #1B1C18' : 'none',
+            textShadow: isWhite ? '0 1px 1.5px rgba(0,0,0,0.45)' : '0 1px 1px rgba(0,0,0,0.25)',
+          }}
+        >
+          {glyph}
+        </span>
+      </div>
+    )]
+  })
+)
+
+const PIECE_SETS = { fantasy: FANTASY_PIECES, heraldic: HERALDIC_PIECES, medallion: MEDALLION_PIECES, tempo: TEMPO_PIECES, ply: PLY_PIECES }
 
 // Subtle grain/vein overlays layered on top of the flat square color so the
 // board reads as carved stone / worn wood / aged parchment rather than a
@@ -186,6 +246,17 @@ function frameStyleFor(theme) {
       boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
     }
   }
+  // Ply: a plain white card with a hairline border and a soft shadow —
+  // "soft shadows only when necessary" from the Ply brief, no carved frame.
+  if (theme.id === 'ply') {
+    return {
+      padding: '10px',
+      background: theme.colors.bg2,
+      border: `1px solid ${theme.colors.border}`,
+      borderRadius: '8px',
+      boxShadow: '0 1px 2px rgba(23,25,28,0.06), 0 4px 16px rgba(23,25,28,0.05)',
+    }
+  }
   return {
     padding: '10px',
     background: `linear-gradient(155deg, ${theme.colors.dim}, ${theme.colors.border})`,
@@ -222,17 +293,16 @@ export function Chessboard({
   const selectedSquare = selection?.atPosition === position ? selection.square : null
 
   const themeId = useAppStore(s => s.settings.theme) || DEFAULT_THEME_ID
-  const visualMode = useAppStore(s => s.settings.visualMode) || 'medieval'
+  const visualMode = useAppStore(s => s.settings.visualMode) || 'tempo'
+  const animateMoves = useAppStore(s => s.settings.animateMoves) !== false
   const theme = useMemo(
-    () => (visualMode === 'tempo' ? TEMPO_THEME : getTheme(themeId)),
+    () => getActiveTheme(visualMode, themeId),
     [themeId, visualMode]
   )
   const pieceStyleId = useAppStore(s => s.settings.pieceStyle) || DEFAULT_PIECE_STYLE_ID
-  // Tempo always uses its own typographic piece set — piece style is a
-  // medieval-mode-only preference (Fantasy/Heraldic/Medallion artwork).
-  const pieceSet = visualMode === 'tempo'
-    ? PIECE_SETS.tempo
-    : (PIECE_SETS[pieceStyleId] || PIECE_SETS[DEFAULT_PIECE_STYLE_ID])
+  // Tempo and Ply always use their own typographic piece set — piece style
+  // is a medieval-mode-only preference (Fantasy/Heraldic/Medallion artwork).
+  const pieceSet = PIECE_SETS[visualMode] || PIECE_SETS[pieceStyleId] || PIECE_SETS[DEFAULT_PIECE_STYLE_ID]
 
   // Read-only parse of the FEN for legal-move highlighting and the check indicator.
   // Never mutates any page's own game state.
@@ -253,7 +323,11 @@ export function Chessboard({
     }
 
     if (arePiecesDraggable && selectedSquare) {
-      styles[selectedSquare] = { ...styles[selectedSquare], backgroundColor: 'rgba(255, 215, 0, 0.35)' }
+      styles[selectedSquare] = {
+        ...styles[selectedSquare],
+        backgroundColor: 'rgba(255, 215, 0, 0.35)',
+        transition: `background-color ${DURATION.quick}s ease`,
+      }
       for (const m of engine.legalMoves(selectedSquare)) {
         styles[m.to] = {
           ...styles[m.to],
@@ -310,6 +384,12 @@ export function Chessboard({
           lightSquareStyle: customLightSquareStyle ?? options.lightSquareStyle ?? squareStyleFor(theme.board.light, theme),
           squareStyles: mergedSquareStyles,
           allowDragging: arePiecesDraggable ?? options.allowDragging,
+          // Wires up the previously-dead "Animate moves" setting toggle (it
+          // existed in SettingsPage.jsx but nothing read it). Tempo also
+          // tightens the slide to the design doc's "quick" token (180ms)
+          // instead of the library's 300ms default, which medieval keeps.
+          showAnimations: options.showAnimations ?? animateMoves,
+          animationDurationInMs: options.animationDurationInMs ?? ((visualMode === 'tempo' || visualMode === 'ply') ? DURATION.quick * 1000 : undefined),
           onPieceDrop,
           onSquareClick: handleSquareClick,
         }}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import MoveLedger from '../components/ui/MoveLedger'
+import GameStatusBadge from '../components/ui/GameStatusBadge'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 
@@ -82,12 +83,10 @@ export default function FreePlayPage() {
       </div>
 
       <div className="w-64 shrink-0 border-l border-border bg-bg2 flex flex-col p-4 gap-3 overflow-hidden">
-        <div className={`rounded-xl px-3 py-2 text-sm font-medium text-center ${
-          gameOver ? 'bg-gold/15 text-gold border border-gold/30' :
-          isCheck  ? 'bg-danger/15 text-danger border border-danger/30' :
-          'bg-bg3 text-muted border border-border'}`}>
-          {status || 'White to move'}
-        </div>
+        <GameStatusBadge
+          text={status || 'White to move'}
+          tone={gameOver ? 'over' : isCheck ? 'check' : 'default'}
+        />
 
         <div className="grid grid-cols-2 gap-2 shrink-0">
           <button onClick={handleUndo} disabled={moveList.length === 0} className="btn-ghost text-sm disabled:opacity-40">← Undo</button>

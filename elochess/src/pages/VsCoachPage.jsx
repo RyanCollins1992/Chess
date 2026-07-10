@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import MoveLedger from '../components/ui/MoveLedger'
+import GameStatusBadge from '../components/ui/GameStatusBadge'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
 import { aiCoach } from '../core/AICoach'
@@ -212,12 +213,10 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
       </div>
 
       <div className="w-64 shrink-0 border-l border-border bg-bg2 flex flex-col p-4 gap-3 overflow-y-auto">
-        <div className={`rounded-xl px-3 py-2 text-sm font-medium text-center ${
-          gameOver ? 'bg-gold/15 text-gold border border-gold/30' :
-          status.includes('is in check!') ? 'bg-danger/15 text-danger border border-danger/30' :
-          'bg-bg3 text-muted border border-border'}`}>
-          {status || (fen.split(' ')[1] === 'w' ? "White's turn" : "Black's turn")}
-        </div>
+        <GameStatusBadge
+          text={status || (fen.split(' ')[1] === 'w' ? "White's turn" : "Black's turn")}
+          tone={gameOver ? 'over' : status.includes('is in check!') ? 'check' : 'default'}
+        />
         <div className="flex-1 overflow-y-auto">
           <div className="text-xs text-muted uppercase tracking-wide font-bold mb-2">Moves</div>
           <MoveLedger moveList={moveList} />

@@ -9,24 +9,31 @@ export default {
         // to :root by ThemeProvider) instead of a static hex, so switching
         // the active theme in Settings retints the whole app at runtime with
         // no rebuild. See src/styles/themes.js for the 8 theme definitions.
-        bg:      'var(--color-bg)',
-        bg2:     'var(--color-bg2)',
-        bg3:     'var(--color-bg3)',
-        border:  'var(--color-border)',
-        gold:    'var(--color-gold)',
-        gold2:   'var(--color-gold2)',
-        accent:  'var(--color-accent)',
-        accent2: 'var(--color-accent2)',
-        muted:   'var(--color-muted)',
-        dim:     'var(--color-dim)',
-        text:    'var(--color-text)',
-        danger:  'var(--color-danger)',
+        // Each reads the `<alpha-value>` placeholder pattern (not the plain
+        // hex var) so opacity modifiers work — bg-gold/10, text-danger/30
+        // etc. Tailwind can't alpha-blend an opaque var(--color-gold) hex
+        // string at build time, so it silently dropped every /NN utility
+        // against these tokens app-wide until this fix (2026-07-10, see
+        // project memory) — it needs the companion --color-*-rgb "R G B"
+        // triplet vars set alongside the hex ones in AppLayout.jsx/globals.css.
+        bg:      'rgb(var(--color-bg-rgb) / <alpha-value>)',
+        bg2:     'rgb(var(--color-bg2-rgb) / <alpha-value>)',
+        bg3:     'rgb(var(--color-bg3-rgb) / <alpha-value>)',
+        border:  'rgb(var(--color-border-rgb) / <alpha-value>)',
+        gold:    'rgb(var(--color-gold-rgb) / <alpha-value>)',
+        gold2:   'rgb(var(--color-gold2-rgb) / <alpha-value>)',
+        accent:  'rgb(var(--color-accent-rgb) / <alpha-value>)',
+        accent2: 'rgb(var(--color-accent2-rgb) / <alpha-value>)',
+        muted:   'rgb(var(--color-muted-rgb) / <alpha-value>)',
+        dim:     'rgb(var(--color-dim-rgb) / <alpha-value>)',
+        text:    'rgb(var(--color-text-rgb) / <alpha-value>)',
+        danger:  'rgb(var(--color-danger-rgb) / <alpha-value>)',
         // Overrides Tailwind's built-in "white" so raw text-white usages
         // (127 of them, hardcoded directly in components rather than routed
         // through a token) resolve to whichever value is correct for the
         // active theme — dark ink for the two light themes, warm off-white
         // for the six dark ones.
-        white: 'var(--color-white)',
+        white: 'rgb(var(--color-white-rgb) / <alpha-value>)',
         // Static (not theme-reactive) — used only by EloRoadmapPage.jsx's
         // 6-tier gray/green/blue/yellow/orange/red progression. Difficulty
         // badges/level indicators elsewhere use the theme-aware accent2/
@@ -80,11 +87,17 @@ export default {
         mono: ['JetBrains Mono', 'monospace'],
       },
       // Tightened from Tailwind's defaults (xl=12px, 2xl=16px, 3xl=24px) to a
-      // restrained 6-10px scale — sm/md/lg/full are left at their defaults.
+      // restrained 6-10px scale — sm/md/full are left at their defaults.
+      // lg/xl/2xl/3xl read CSS custom properties (defined in globals.css)
+      // instead of static values so Tempo's small, architectural corners
+      // (3px/6px) can override the shared medieval-scale default (8px/10px)
+      // per data-visual-mode, the same mechanism themes.js/AppLayout.jsx
+      // already use for --color-*/--font-heading.
       borderRadius: {
-        xl: '0.5rem',     // 8px
-        '2xl': '0.625rem', // 10px
-        '3xl': '0.625rem', // 10px
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-2xl)',
       },
       boxShadow: {
         // Tight, low-opacity elevation shadow for floating UI (toasts, the
