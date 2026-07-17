@@ -4,10 +4,14 @@ import { srsEngine } from '../core/SpacedRepetitionEngine'
 import { TRAPS } from '../data/traps'
 import { useAppStore } from '../store/useAppStore'
 
+// Deliberately doesn't repeat Dashboard's XP/streak/ELO stat cards or ELO
+// chart (2026-07-17) — those live there now, better implemented (a real
+// recharts area chart vs. this page's old hand-rolled SVG). This page is
+// the deeper all-time view: level progress, trap mastery, badges, and the
+// XP-earning reference, none of which Dashboard covers.
 export default function ProgressPage() {
   const progress = useAppStore(s => s.progress)
   const srsStats = useMemo(() => srsEngine.getStats(), [])
-  const eloHistory = progressManager.eloHistory.slice(-10)
 
   const knownCount  = progress.knownCount
   const totalTraps  = TRAPS.length
@@ -22,42 +26,20 @@ export default function ProgressPage() {
         <p className="text-muted text-sm mt-1">Track your chess improvement over time</p>
       </div>
 
-      {/* Top stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon="⚡" label="XP Today"    value={progress.xpToday}     color="text-gold" />
-        <StatCard icon="🔥" label="Day Streak"  value={`${progress.streak}d`} color="text-orange-400" />
-        <StatCard icon="📊" label="ELO"         value={progress.currentElo}  color="text-accent" />
-        <StatCard icon="🏋️" label="Total Drills" value={progress.totalDrills} color="text-accent2" />
-      </div>
-
-      {/* ELO + Level */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        {/* Level */}
-        <div className="card space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="font-bold text-white">Level {progress.level}</div>
-            <div className="text-xs text-muted">{progress.xpTotal} XP total</div>
-          </div>
-          <div className="h-2 bg-bg3 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gold rounded-full transition-all"
-              style={{ width: `${Math.min(100, (progress.xpTotal % 200) / 2)}%` }}
-            />
-          </div>
-          <div className="text-xs text-muted">
-            {200 - (progress.xpTotal % 200)} XP to level {progress.level + 1}
-          </div>
+      {/* Level */}
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="font-bold text-white">Level {progress.level}</div>
+          <div className="text-xs text-muted">{progress.xpTotal} XP total</div>
         </div>
-
-        {/* ELO history mini chart */}
-        <div className="card space-y-3">
-          <div className="font-bold text-white">ELO History</div>
-          {eloHistory.length < 2 ? (
-            <div className="text-muted text-sm">Play more games to see your ELO trend</div>
-          ) : (
-            <MiniLineChart data={eloHistory.map(e => e.elo)} />
-          )}
+        <div className="h-2 bg-bg3 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gold rounded-full transition-all"
+            style={{ width: `${Math.min(100, (progress.xpTotal % 200) / 2)}%` }}
+          />
+        </div>
+        <div className="text-xs text-muted">
+          {200 - (progress.xpTotal % 200)} XP to level {progress.level + 1}
         </div>
       </div>
 
@@ -116,55 +98,12 @@ export default function ProgressPage() {
 
 // ── Sub-components ────────────────────────────────────────────────
 
-function StatCard({ icon, label, value, color }) {
-  return (
-    <div className="card flex flex-col gap-1">
-      <span className="text-xl">{icon}</span>
-      <span className={`text-2xl font-extrabold ${color || 'text-white'}`}>{value}</span>
-      <span className="text-xs text-muted">{label}</span>
-    </div>
-  )
-}
-
 function MiniStat({ label, value, color }) {
   return (
     <div className="px-3">
       <div className={`text-xl font-extrabold ${color || 'text-white'}`}>{value}</div>
       <div className="text-xs text-muted mt-0.5">{label}</div>
     </div>
-  )
-}
-
-function MiniLineChart({ data }) {
-  const min = Math.min(...data)
-  const max = Math.max(...data)
-  const range = max - min || 1
-  const w = 280, h = 60, pad = 8
-
-  const points = data.map((v, i) => {
-    const x = pad + (i / (data.length - 1)) * (w - pad * 2)
-    const y = h - pad - ((v - min) / range) * (h - pad * 2)
-    return `${x},${y}`
-  }).join(' ')
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full">
-      <polyline
-        points={points}
-        fill="none"
-        stroke="#3b82f6"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {data.map((v, i) => {
-        const x = pad + (i / (data.length - 1)) * (w - pad * 2)
-        const y = h - pad - ((v - min) / range) * (h - pad * 2)
-        return <circle key={i} cx={x} cy={y} r="3" fill="#3b82f6" />
-      })}
-      <text x={pad} y={h - 1} fontSize="9" fill="#6b7280">{min}</text>
-      <text x={w - pad} y={h - 1} fontSize="9" fill="#6b7280" textAnchor="end">{max}</text>
-    </svg>
   )
 }
 
