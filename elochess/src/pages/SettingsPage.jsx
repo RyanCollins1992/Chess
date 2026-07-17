@@ -215,6 +215,12 @@ export default function SettingsPage() {
               React, Vite, Tailwind CSS, chess.js, react-chessboard, Zustand, and Capacitor (all MIT licensed).
             </p>
           </div>
+          <div>
+            <div className="font-medium text-white mb-1">Privacy</div>
+            <p className="text-muted">
+              <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Privacy Policy</a>
+            </p>
+          </div>
         </div>
       </Section>
 
