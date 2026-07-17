@@ -239,11 +239,15 @@ function TrapStudy({ trap, showToast }) {
     console.log('TrapStudy.handleDrop', { from, to, moveIdx: moveIdxRef.current })
     if (complete || browseMode) { console.log('TrapStudy: ignored (complete or browseMode)'); return false }
 
-    const result = tryMove(from, to)
+    const expected  = trap.moves[moveIdxRef.current]
+    // Scripted underpromotions (e.g. Lasker Trap's "fxg1=N+") need the drag to
+    // promote to that exact piece — tryMove defaults to queen otherwise, which
+    // would never match the expected line.
+    const expectedPromotion = expected?.match(/=([QRBN])/i)?.[1]?.toLowerCase() || 'q'
+    const result = tryMove(from, to, expectedPromotion)
     if (!result) return false
 
     const normalize = s => s.replace(/[+#!?]/g, '')
-    const expected  = trap.moves[moveIdxRef.current]
 
     console.log('TrapStudy: move result', result)
     if (normalize(result.san) === normalize(expected)) {

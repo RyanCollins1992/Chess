@@ -20,7 +20,12 @@ const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
  *                    and returns the verbose move, or null if the move is illegal.
  *                    (chess.js throws on illegal moves — returning null IS the
  *                    legality check, not a swallowed error.)
- * - tryMove(from, to)  drop-handler sugar for move({from, to, promotion: 'q'})
+ * - tryMove(from, to, promotion?)  drop-handler sugar for move({from, to, promotion}),
+ *                    defaulting promotion to 'q' — pass the expected line's own
+ *                    promotion piece for drills with an underpromotion move, or a
+ *                    drag can never match a scripted "=N"/"=R"/"=B" line (a real
+ *                    bug found shipping the Lasker Trap, whose point IS the
+ *                    underpromotion).
  * - undo()     reverts the last move and re-syncs fen
  * - reset(newFen?)   reloads newFen (or the standard start position). Throws on
  *                    an invalid FEN so callers can surface the error themselves.
@@ -39,7 +44,7 @@ export function useChessBoard(initialFen) {
     return result
   }, [])
 
-  const tryMove = useCallback((from, to) => move({ from, to, promotion: 'q' }), [move])
+  const tryMove = useCallback((from, to, promotion = 'q') => move({ from, to, promotion }), [move])
 
   const undo = useCallback(() => {
     const result = chessRef.current.undo()

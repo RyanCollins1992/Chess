@@ -65,10 +65,14 @@ function DrillCard({ trap, onComplete }) {
   const [flash, setFlash]     = useState(null)
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
-    const result = tryMove(from, to)
+    const expected = trap.moves[moveIdxRef.current]
+    // Scripted underpromotions (e.g. Lasker Trap's "fxg1=N+") need the drag to
+    // promote to that exact piece — tryMove defaults to queen otherwise.
+    const expectedPromotion = expected?.match(/=([QRBN])/i)?.[1]?.toLowerCase() || 'q'
+    const result = tryMove(from, to, expectedPromotion)
     if (!result) return false
     const normalize = s => s.replace(/[+#!?]/g, '')
-    if (normalize(result.san) === normalize(trap.moves[moveIdxRef.current])) {
+    if (normalize(result.san) === normalize(expected)) {
       setFlash('correct')
       const next = moveIdxRef.current + 1
       moveIdxRef.current = next
