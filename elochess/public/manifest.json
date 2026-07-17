@@ -1,0 +1,16 @@
+{
+  "name": "MentorChess",
+  "short_name": "MentorChess",
+  "description": "Chess training — openings, tactics, spaced review and game analysis",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121315",
+  "theme_color": "#8C6A28",
+  "icons": [
+    {
+      "src": "/mentorchess-icon.png",
+      "sizes": "300x295",
+      "type": "image/png"
+    }
+  ]
+}
