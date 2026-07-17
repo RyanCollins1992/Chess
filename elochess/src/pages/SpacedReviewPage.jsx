@@ -93,7 +93,7 @@ function DrillCard({ trap, onComplete }) {
         <div className="w-full max-w-[420px]">
           <div className={`rounded-xl overflow-hidden transition-all duration-200 ${flash==='correct'?'ring-2 ring-accent2':flash==='wrong'?'ring-2 ring-danger':''}`}>
             <Chessboard position={fen} onPieceDrop={handleDrop}
-              boardOrientation={trap.color==='black'?'black':'white'} />
+              boardOrientation={trap.color==='black'?'black':'white'} arePiecesDraggable />
           </div>
           <div className="mt-3 flex flex-wrap gap-1">
             {trap.moves.map((m,i) => (

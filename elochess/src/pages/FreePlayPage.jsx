@@ -73,7 +73,7 @@ export default function FreePlayPage() {
             <div className="text-sm text-muted">{orientation === 'white' ? 'Black' : 'White'}</div>
           </div>
           <Chessboard position={fen} onPieceDrop={handleDrop} boardOrientation={orientation}
-            customSquareStyles={customSquareStyles} />
+            customSquareStyles={customSquareStyles} arePiecesDraggable={!gameOver} />
           <div className="flex items-center gap-2 mt-2">
             <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-sm">{orientation === 'white' ? '♔' : '♚'}</div>
             <div className="text-sm text-muted">{orientation === 'white' ? 'White' : 'Black'}</div>
