@@ -4,6 +4,7 @@ import Topbar from './Topbar'
 import AICoachPanel from '../ui/AICoachPanel'
 import Toast from '../ui/Toast'
 import CommandPalette from '../ui/CommandPalette'
+import OnboardingFlow from '../ui/OnboardingFlow'
 import { useAppStore } from '../../store/useAppStore'
 import { KNIGHTPATH_THEME, KNIGHTPATH_DARK_THEME } from '../../styles/knightpath'
 
@@ -85,6 +86,9 @@ export default function AppLayout({ children }) {
 
       {/* Command palette (Cmd/Ctrl+K) */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* First-run welcome flow — renders nothing once settings.onboardingComplete is set */}
+      <OnboardingFlow />
     </div>
   )
 }
