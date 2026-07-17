@@ -2,16 +2,8 @@ import { useState } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useAppStore } from '../store/useAppStore'
+import { PATTERNS } from '../data/matePatterns'
 
-const PATTERNS = [
-  { id: 'back-rank', name: 'Back Rank Mate', icon: '♜', desc: 'Rook/queen mates on the back rank when the king is trapped behind pawns.', fen: '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', solution: ['Rd8'], explanation: 'Rd8# — the king has no escape, own pawns trap it.', category: 'Rook' },
-  { id: 'scholars', name: "Scholar's Mate", icon: '♛', desc: 'The 4-move checkmate targeting f7.', fen: 'r1bqkbnr/pppp1Qpp/8/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4', solution: [], explanation: 'Qxf7# — protected by the bishop on c4.', category: 'Queen', isDemo: true },
-  { id: 'smothered', name: 'Smothered Mate', icon: '♞', desc: 'Knight mates while the king is smothered by its own pieces.', fen: '6rk/6pp/8/5N2/8/8/6PP/6K1 w - - 0 1', solution: ['Nh6'], explanation: 'Nh6# — own rook and pawns block every escape.', category: 'Knight' },
-  { id: 'anastasia', name: "Anastasia's Mate", icon: '♞', desc: 'Knight and rook trap the king on the h-file.', fen: '5rk1/4Rppp/5n2/8/8/8/5PPP/6K1 w - - 0 1', solution: ['Rxg7'], explanation: 'Rxg7+! forces Kh8, then knight on g6 seals it.', category: 'Knight' },
-  { id: 'arabian', name: 'Arabian Mate', icon: '♞', desc: 'Knight and rook trap the king in the corner.', fen: '7k/8/6KN/8/8/8/8/7R w - - 0 1', solution: ['Rh7'], explanation: 'Rh7# — knight covers f7/g8, rook covers h-file.', category: 'Rook' },
-  { id: 'boden', name: "Boden's Mate", icon: '♝', desc: 'Two bishops on criss-crossing diagonals.', fen: '2kr4/ppp5/8/3B4/8/8/PPP5/2KR4 w d - 0 1', solution: ['Ba5'], explanation: 'Two bishops create a mating net the king cannot escape.', category: 'Bishop' },
-  { id: 'epaulette', name: 'Epaulette Mate', icon: '♛', desc: 'Queen mates with king flanked by its own pieces.', fen: '3rkr2/8/8/8/8/8/8/3QK3 w - - 0 1', solution: ['Qd6'], explanation: 'Qd6# — king trapped between own rooks on d8 and f8.', category: 'Queen' },
-]
 const CATEGORIES = ['All', 'Rook', 'Queen', 'Knight', 'Bishop']
 
 export default function MatePatternsPage() {
