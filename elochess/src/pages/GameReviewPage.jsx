@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
+import { EvalBar } from '../components/ui/EvalBar'
 import { Chess } from 'chess.js'
 import { useAppStore } from '../store/useAppStore'
+import { readThemeColor } from '../core/themeColor'
 import {
   CLASSIFICATIONS,
   classifyMove,
@@ -10,7 +12,6 @@ import {
   encodeMateScore,
   isMateScore,
   mateDistance,
-  winPercent,
   moveAccuracy,
   uciToSan,
   isGreatMove,
@@ -256,12 +257,9 @@ export default function GameReviewPage() {
 
   const currentAnalysis = analysis[currentIdx - 1] || null
 
-  // Reads the active theme's own gold/accent token (medieval or Tempo's
-  // Brass) rather than a hardcoded hex, so the arrow retints with everything
-  // else — see squareStyleFor/frameStyleFor in Chessboard.jsx for the same pattern.
-  const goldVar = typeof window !== 'undefined'
-    ? getComputedStyle(document.documentElement).getPropertyValue('--color-gold').trim() || '#f5b731'
-    : '#f5b731'
+  // Reads the active theme's own gold token rather than a hardcoded hex, so
+  // the arrow retints with everything else.
+  const goldVar = readThemeColor('--color-gold', '#f5b731')
   const bestMoveArrow = currentAnalysis?.bestMove
     ? [{ startSquare: currentAnalysis.bestMove.slice(0, 2), endSquare: currentAnalysis.bestMove.slice(2, 4), color: `${goldVar}99` }]
     : []
@@ -420,30 +418,6 @@ const TABS = [
 ]
 
 // ── Sub-components ────────────────────────────────────────────────
-
-function EvalBar({ eval: ev }) {
-  // Sigmoid win-probability (same formula as Lichess) — small advantages are clearly visible
-  const whitePct = winPercent(ev)
-  const isMate   = isMateScore(ev)
-  const display  = isMate
-    ? `M${mateDistance(ev)}`
-    : (Math.abs(ev) / 100).toFixed(1)
-  const sign = ev >= 0 ? '+' : '-'
-
-  return (
-    <div className="flex items-center gap-2 h-5">
-      <div className="flex-1 h-3 bg-bg3 rounded-full overflow-hidden relative">
-        <div
-          className="h-full bg-gold transition-all duration-500 ease-out absolute left-0 top-0"
-          style={{ width: `${whitePct}%` }}
-        />
-      </div>
-      <div className={`text-xs font-bold font-mono w-14 text-right tabular-nums ${ev >= 0 ? 'text-gold' : 'text-muted'}`}>
-        {sign}{display}
-      </div>
-    </div>
-  )
-}
 
 function NavBtn({ onClick, disabled, label, name }) {
   return (

@@ -10,6 +10,7 @@ import {
   winPercent,
   moveAccuracy,
   uciToSan,
+  pvToSan,
   isGreatMove,
   isBrilliantMove,
   parsePgnToGame,
@@ -174,6 +175,47 @@ describe('uciToSan', () => {
     expect(uciToSan(START_FEN, '')).toBeNull()
     expect(uciToSan(START_FEN, 'e2e5')).toBeNull()       // illegal move
     expect(uciToSan('not a fen', 'e2e4')).toBeNull()
+  })
+})
+
+// ── pvToSan ───────────────────────────────────────────────────────
+describe('pvToSan', () => {
+  it('replays a PV from the start position, numbering white/black moves', () => {
+    const pv = pvToSan(START_FEN, ['e2e4', 'e7e5', 'g1f3'])
+    expect(pv).toEqual([
+      { san: 'e4',  from: 'e2', to: 'e4', color: 'w', moveNum: '1.' },
+      { san: 'e5',  from: 'e7', to: 'e5', color: 'b', moveNum: '1…' },
+      { san: 'Nf3', from: 'g1', to: 'f3', color: 'w', moveNum: '2.' },
+    ])
+  })
+
+  it('numbers from the FEN\'s own fullmove/turn fields for a mid-game PV', () => {
+    // After 1.e4 e5 2.Nf3 Nc6, White to move at move 3.
+    const midgameFen = 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3'
+    const pv = pvToSan(midgameFen, ['f1b5', 'a7a6'])
+    expect(pv.map(p => p.moveNum)).toEqual(['3.', '3…'])
+    expect(pv.map(p => p.san)).toEqual(['Bb5', 'a6'])
+  })
+
+  it('caps at maxPlies', () => {
+    const pv = pvToSan(START_FEN, ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4'], 2)
+    expect(pv).toHaveLength(2)
+    expect(pv.map(p => p.san)).toEqual(['e4', 'e5'])
+  })
+
+  it('handles a promotion move mid-PV', () => {
+    const pv = pvToSan('7k/4P3/8/8/8/8/8/4K3 w - - 0 1', ['e7e8q'])
+    expect(pv[0].san).toBe('e8=Q+')
+  })
+
+  it('stops early (keeping what it built) on an illegal move', () => {
+    const pv = pvToSan(START_FEN, ['e2e4', 'e7e6', 'e2e5']) // e2e5 illegal after the first two moves
+    expect(pv.map(p => p.san)).toEqual(['e4', 'e6'])
+  })
+
+  it('returns an empty array for empty/missing input', () => {
+    expect(pvToSan(START_FEN, [])).toEqual([])
+    expect(pvToSan(START_FEN, null)).toEqual([])
   })
 })
 

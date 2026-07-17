@@ -78,6 +78,43 @@ export function uciToSan(fen, uci) {
   } catch { return null }
 }
 
+// Converts a UCI principal variation (Stockfish's "pv" move list) into SAN
+// for display — replays ply-by-ply from `fen` via the same move-application
+// uciToSan uses. Numbering starts from the FEN's own fullmove/turn fields
+// (a PV can begin mid-game, not just move 1), same moveNum convention as
+// parsePGN above. Stops early (returns whatever it built so far) on any
+// illegal/unparseable move rather than throwing — a PV is best-effort
+// display content, not something a caller should have to guard.
+export function pvToSan(fen, uciMoves, maxPlies = 4) {
+  if (!uciMoves || uciMoves.length === 0) return []
+  const parts   = fen.split(' ')
+  let color     = parts[1] || 'w'
+  let moveNum   = parseInt(parts[5], 10) || 1
+  let currentFen = fen
+
+  const result = []
+  for (const uci of uciMoves.slice(0, maxPlies)) {
+    let move
+    try {
+      const chess = new Chess(currentFen)
+      move = chess.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.slice(4) || 'q' })
+      if (move) currentFen = chess.fen()
+    } catch { break }
+    if (!move) break
+
+    result.push({
+      san:     move.san,
+      from:    move.from,
+      to:      move.to,
+      color,
+      moveNum: color === 'w' ? `${moveNum}.` : `${moveNum}…`,
+    })
+    if (color === 'b') moveNum++
+    color = color === 'w' ? 'b' : 'w'
+  }
+  return result
+}
+
 // Heuristic approximations of Lichess/Chess.com's Brilliant/Great detection —
 // not identical to their algorithms, but real signal rather than guesswork.
 // GREAT: this was clearly the one move that mattered (the next-best

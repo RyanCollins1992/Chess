@@ -91,4 +91,24 @@ describe('Chessboard', () => {
     const innerDiv = kingSquare.querySelector('div')
     expect(innerDiv.style.animation).toContain('check-blink')
   })
+
+  it('glows both squares of the lastMove prop', () => {
+    const { container } = render(
+      <Chessboard position={START_FEN} onPieceDrop={() => true} lastMove={{ from: 'e2', to: 'e4' }} />
+    )
+    const fromInner = square(container, 'e2').querySelector('div')
+    const toInner   = square(container, 'e4').querySelector('div')
+    expect(fromInner.style.animation).toContain('last-move-glow')
+    expect(toInner.style.animation).toContain('last-move-glow')
+    expect(toInner.style.animation).not.toContain('capture-impact')
+  })
+
+  it('layers the capture-impact flash on top of the glow when lastMove.captured is true', () => {
+    const { container } = render(
+      <Chessboard position={START_FEN} onPieceDrop={() => true} lastMove={{ from: 'e4', to: 'd5', captured: true }} />
+    )
+    const toInner = square(container, 'd5').querySelector('div')
+    expect(toInner.style.animation).toContain('last-move-glow')
+    expect(toInner.style.animation).toContain('capture-impact')
+  })
 })

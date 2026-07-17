@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import VsCoachPage from './VsCoachPage'
 
@@ -14,13 +14,22 @@ import VsCoachPage from './VsCoachPage'
 // fiber are simply no-ops), so a "did it throw/warn" assertion can't detect this bug.
 // Instead we assert on an observable side effect of makeAiMove() actually running:
 // whether it posts 'go depth ...' to the worker to request a move evaluation.
+//
+// GameScreen now constructs a SECOND worker (LiveEvalEngine, for Analysis Mode) once
+// mode flips to 'analysis' — `workerInstances` captures every instance in construction
+// order (index 0 is always the AI-opponent's, created on mount; index 1, when it exists,
+// is the live-eval one), while `lastWorkerInstance` keeps its original meaning for the
+// pre-existing tests below (which never touch Analysis Mode, so only one worker ever
+// exists in them).
 let lastWorkerInstance = null
+let workerInstances = []
 class FakeWorker {
   constructor() {
     this.onmessage = null
     this.terminated = false
     this.postedMessages = []
     lastWorkerInstance = this
+    workerInstances.push(this)
   }
   postMessage(msg) {
     this.postedMessages.push(msg)
@@ -30,6 +39,8 @@ class FakeWorker {
   }
 }
 
+const flush = () => act(async () => { await new Promise(r => setTimeout(r, 0)) })
+
 describe('VsCoachPage', () => {
   let originalWorker
 
@@ -37,6 +48,7 @@ describe('VsCoachPage', () => {
     originalWorker = globalThis.Worker
     globalThis.Worker = FakeWorker
     lastWorkerInstance = null
+    workerInstances = []
   })
 
   afterEach(() => {
@@ -91,5 +103,105 @@ describe('VsCoachPage', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(worker.postedMessages.some(m => m.startsWith('go depth'))).toBe(false)
+  })
+
+  it('defaults to Focus mode, with the sidebar showing status/moves but no analysis content', async () => {
+    const user = userEvent.setup()
+    render(<VsCoachPage />)
+    await user.click(screen.getByText('Start Game')) // default White
+
+    expect(screen.getByText('🎯 Focus')).toHaveClass('bg-gold')
+    expect(screen.getByText('No moves yet')).toBeInTheDocument() // MoveLedger stays visible
+    expect(screen.queryByText('Scratch notes for this game…')).not.toBeInTheDocument()
+  })
+
+  it('switching to Analysis mode reveals the notes textarea', async () => {
+    const user = userEvent.setup()
+    render(<VsCoachPage />)
+    await user.click(screen.getByText('Start Game'))
+
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+    expect(screen.getByPlaceholderText('Scratch notes for this game…')).toBeInTheDocument()
+  })
+
+  it('Analysis mode shows the live eval bar once the mocked engine responds', async () => {
+    const user = userEvent.setup()
+    render(<VsCoachPage />)
+    await user.click(screen.getByText('Start Game'))
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+
+    const liveEvalWorker = workerInstances[1]
+    expect(liveEvalWorker).toBeTruthy()
+    act(() => {
+      liveEvalWorker.onmessage({ data: 'uciok' })
+      liveEvalWorker.onmessage({ data: 'readyok' })
+    })
+    await flush() // let sfReady propagate and the evaluate() effect post its request
+    act(() => {
+      liveEvalWorker.onmessage({ data: 'info depth 16 multipv 1 score cp 45 pv e2e4 e7e5' })
+      liveEvalWorker.onmessage({ data: 'bestmove e2e4' })
+    })
+
+    expect(await screen.findByText('+0.5')).toBeInTheDocument()
+  })
+
+  it('a large eval gap between the top two lines triggers the tactical-opportunity callout', async () => {
+    const user = userEvent.setup()
+    render(<VsCoachPage />)
+    await user.click(screen.getByText('Start Game'))
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+
+    const liveEvalWorker = workerInstances[1]
+    act(() => {
+      liveEvalWorker.onmessage({ data: 'uciok' })
+      liveEvalWorker.onmessage({ data: 'readyok' })
+    })
+    await flush()
+    act(() => {
+      liveEvalWorker.onmessage({ data: 'info depth 16 multipv 1 score cp 500 pv e2e4 e7e5' })
+      liveEvalWorker.onmessage({ data: 'info depth 16 multipv 2 score cp 20 pv d2d4 d7d5' })
+      liveEvalWorker.onmessage({ data: 'bestmove e2e4' })
+    })
+
+    expect(await screen.findByText('🔥 Tactical opportunity')).toBeInTheDocument()
+  })
+
+  it('a completed move glows the last-move squares on the board', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<VsCoachPage />)
+    await user.click(screen.getByText('Start Game')) // White plays first
+
+    const square = (id) => container.querySelector(`[data-square="${id}"]`)
+    fireEvent.click(square('e2'))
+    fireEvent.click(square('e4'))
+
+    const e4Inner = square('e4').querySelector('div')
+    expect(e4Inner.style.animation).toContain('last-move-glow')
+  })
+
+  it('notes persist within a game and clear when a new game starts', async () => {
+    const user = userEvent.setup()
+    render(<VsCoachPage />)
+    await user.click(screen.getByText('Start Game'))
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+
+    const textarea = screen.getByPlaceholderText('Scratch notes for this game…')
+    fireEvent.change(textarea, { target: { value: 'watch e5' } })
+    expect(textarea).toHaveValue('watch e5')
+
+    fireEvent.click(screen.getByText('↺ Resign')) // back to setup — GameScreen unmounts
+    await user.click(screen.getByText('Start Game')) // fresh GameScreen, notes reset for free
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+
+    expect(screen.getByPlaceholderText('Scratch notes for this game…')).toHaveValue('')
+  })
+
+  it('the elapsed-time timer increments while a game is in progress', () => {
+    vi.useFakeTimers()
+    render(<VsCoachPage />)
+    fireEvent.click(screen.getByText('Start Game')) // default White, no AI-first-move complexity
+    act(() => { vi.advanceTimersByTime(3000) })
+
+    expect(screen.getByText('⏱ 00:03')).toBeInTheDocument()
   })
 })

@@ -172,6 +172,7 @@ export function Chessboard({
   arePiecesDraggable,
   position,
   onPieceDrop,
+  lastMove,
   ...props
 }) {
   // Tracks the FEN the selection was made against, so a position change from
@@ -196,6 +197,19 @@ export function Chessboard({
     const styles = {}
     if (!engine) return styles
 
+    // Last-move glow (+ a one-shot brighter flash layered on top for
+    // captures) — both squares of the most recently played move, applied
+    // before the check/selection styles below so those can still win on a
+    // shared square (e.g. the king square glowing red for check takes
+    // priority over a same-square last-move gold pulse).
+    if (lastMove?.from && lastMove?.to) {
+      const animation = lastMove.captured
+        ? 'last-move-glow 1.6s ease-in-out infinite, capture-impact 0.5s ease-out 1'
+        : 'last-move-glow 1.6s ease-in-out infinite'
+      styles[lastMove.from] = { ...styles[lastMove.from], animation }
+      styles[lastMove.to]   = { ...styles[lastMove.to], animation }
+    }
+
     if (engine.isCheck) {
       const kingSquare = findKingSquare(engine.board, engine.turn)
       if (kingSquare) {
@@ -212,6 +226,7 @@ export function Chessboard({
       for (const m of engine.legalMoves(selectedSquare)) {
         styles[m.to] = {
           ...styles[m.to],
+          transition: `box-shadow ${DURATION.quick}s ease, background-color ${DURATION.quick}s ease`,
           ...(m.captured
             ? { boxShadow: 'inset 0 0 0 3px rgba(0,0,0,0.35)' }
             : { backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.25) 19%, transparent 20%)' }),
@@ -220,7 +235,7 @@ export function Chessboard({
     }
 
     return styles
-  }, [engine, arePiecesDraggable, selectedSquare])
+  }, [engine, arePiecesDraggable, selectedSquare, lastMove])
 
   const baseSquareStyles = customSquareStyles ?? options.squareStyles
   const mergedSquareStyles = useMemo(() => {
