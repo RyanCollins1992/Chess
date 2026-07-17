@@ -1,0 +1,102 @@
+/**
+ * Chess.com Published-Data API — PGN parsing and fetch helpers shared by
+ * ImportGamesPage (your own games, single month) and ScoutOpponentPage
+ * (an arbitrary opponent's public games, last few months via the archives
+ * index). Extracted from ImportGamesPage.jsx once a second consumer needed
+ * the same parsing logic.
+ */
+
+export function parseGame(g, myUsername) {
+  const pgn = g.pgn || ''
+
+  const header = (tag) => {
+    const m = pgn.match(new RegExp(`\\[${tag} "([^"]+)"\\]`))
+    return m ? m[1] : ''
+  }
+
+  const isWhite   = (g.white?.username || '').toLowerCase() === myUsername
+  const color     = isWhite ? 'White' : 'Black'
+  const myRating  = isWhite ? g.white?.rating : g.black?.rating
+  const oppName   = isWhite ? (g.black?.username || 'Unknown') : (g.white?.username || 'Unknown')
+  const oppRating = isWhite ? g.black?.rating : g.white?.rating
+
+  // Result
+  const resultStr = header('Result')
+  let result = 'Draw'
+  if (resultStr === '1-0') result = isWhite ? 'Win' : 'Loss'
+  else if (resultStr === '0-1') result = isWhite ? 'Loss' : 'Win'
+
+  // Termination
+  const term = header('Termination').replace(/^.+? by /, '') || 'unknown'
+
+  // Date
+  const dateStr = header('Date') || header('UTCDate') || ''
+  const date    = dateStr.replace(/\./g, '-')
+
+  // Opening
+  const opening = header('Opening') || header('ECOUrl')?.split('/').pop()?.replace(/-/g, ' ') || 'Unknown'
+
+  // Time control
+  const tc     = g.time_control || header('TimeControl') || '?'
+  const tcLabel = formatTimeControl(tc)
+
+  // Move count
+  const movesOnly = pgn.replace(/\[[^\]]+\]/g, '').replace(/\{[^}]+\}/g, '').replace(/\d+\./g, '').trim()
+  const moveTokens = movesOnly.split(/\s+/).filter(t => t && !t.match(/^(1-0|0-1|1\/2-1\/2|\*)$/))
+  const moveCount  = Math.ceil(moveTokens.length / 2)
+
+  // Accuracy (from Chess.com data if available)
+  const myAcc = isWhite ? g.accuracies?.white : g.accuracies?.black
+
+  return {
+    pgn,
+    color,
+    result,
+    opponent:       oppName,
+    opponentRating: oppRating || '?',
+    myRating:       myRating || '?',
+    opening,
+    timeControl:    tcLabel,
+    date,
+    moves:          moveCount,
+    termination:    term,
+    accuracy:       myAcc != null ? Math.round(myAcc) : null,
+    url:            g.url || '',
+    white:          g.white?.username || '',
+    black:          g.black?.username || '',
+  }
+}
+
+export function formatTimeControl(tc) {
+  if (!tc || tc === '-') return 'Unknown'
+  const [base] = tc.split('+').map(Number)
+  if (isNaN(base)) return tc
+  if (base < 180) return `${base}s Bullet`
+  if (base < 600) return `${Math.round(base/60)}min Blitz`
+  if (base < 1800) return `${Math.round(base/60)}min Rapid`
+  return `${Math.round(base/60)}min Classical`
+}
+
+// List of monthly archive URLs for a player, oldest first (Chess.com's own order).
+export async function fetchArchives(username) {
+  const res = await fetch(`https://api.chess.com/pub/player/${username}/games/archives`)
+  if (res.status === 404) throw new Error(`Player "${username}" not found on Chess.com`)
+  if (!res.ok) throw new Error(`Chess.com API error (${res.status})`)
+  const data = await res.json()
+  return data.archives || []
+}
+
+// Fetches and parses the most recent `months` of a player's public games —
+// used for opponent scouting, where a single month is too small a sample.
+export async function fetchRecentGames(username, { months = 4 } = {}) {
+  const lower = username.trim().toLowerCase()
+  const archives = await fetchArchives(lower)
+  const recent = archives.slice(-months)
+  const perMonth = await Promise.all(recent.map(async url => {
+    const res = await fetch(url)
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.games || []).filter(g => g.pgn)
+  }))
+  return perMonth.flat().map(g => parseGame(g, lower)).reverse()
+}

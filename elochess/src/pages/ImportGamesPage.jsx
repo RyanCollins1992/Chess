@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { parseGame } from '../core/ChessComImport'
 
 const MONTHS = [
   'January','February','March','April','May','June',
@@ -173,76 +174,4 @@ function GameRow({ game, onReview }) {
       </button>
     </div>
   )
-}
-
-// ── PGN parser ────────────────────────────────────────────────────
-function parseGame(g, myUsername) {
-  const pgn = g.pgn || ''
-
-  const header = (tag) => {
-    const m = pgn.match(new RegExp(`\\[${tag} "([^"]+)"\\]`))
-    return m ? m[1] : ''
-  }
-
-  const isWhite   = (g.white?.username || '').toLowerCase() === myUsername
-  const color     = isWhite ? 'White' : 'Black'
-  const myRating  = isWhite ? g.white?.rating : g.black?.rating
-  const oppName   = isWhite ? (g.black?.username || 'Unknown') : (g.white?.username || 'Unknown')
-  const oppRating = isWhite ? g.black?.rating : g.white?.rating
-
-  // Result
-  const resultStr = header('Result')
-  let result = 'Draw'
-  if (resultStr === '1-0') result = isWhite ? 'Win' : 'Loss'
-  else if (resultStr === '0-1') result = isWhite ? 'Loss' : 'Win'
-
-  // Termination
-  const term = header('Termination').replace(/^.+? by /, '') || 'unknown'
-
-  // Date
-  const dateStr = header('Date') || header('UTCDate') || ''
-  const date    = dateStr.replace(/\./g, '-')
-
-  // Opening
-  const opening = header('Opening') || header('ECOUrl')?.split('/').pop()?.replace(/-/g, ' ') || 'Unknown'
-
-  // Time control
-  const tc     = g.time_control || header('TimeControl') || '?'
-  const tcLabel = formatTimeControl(tc)
-
-  // Move count
-  const movesOnly = pgn.replace(/\[[^\]]+\]/g, '').replace(/\{[^}]+\}/g, '').replace(/\d+\./g, '').trim()
-  const moveTokens = movesOnly.split(/\s+/).filter(t => t && !t.match(/^(1-0|0-1|1\/2-1\/2|\*)$/))
-  const moveCount  = Math.ceil(moveTokens.length / 2)
-
-  // Accuracy (from Chess.com data if available)
-  const myAcc = isWhite ? g.accuracies?.white : g.accuracies?.black
-
-  return {
-    pgn,
-    color,
-    result,
-    opponent:       oppName,
-    opponentRating: oppRating || '?',
-    myRating:       myRating || '?',
-    opening,
-    timeControl:    tcLabel,
-    date,
-    moves:          moveCount,
-    termination:    term,
-    accuracy:       myAcc != null ? Math.round(myAcc) : null,
-    url:            g.url || '',
-    white:          g.white?.username || '',
-    black:          g.black?.username || '',
-  }
-}
-
-function formatTimeControl(tc) {
-  if (!tc || tc === '-') return 'Unknown'
-  const [base] = tc.split('+').map(Number)
-  if (isNaN(base)) return tc
-  if (base < 180) return `${base}s Bullet`
-  if (base < 600) return `${Math.round(base/60)}min Blitz`
-  if (base < 1800) return `${Math.round(base/60)}min Rapid`
-  return `${Math.round(base/60)}min Classical`
 }

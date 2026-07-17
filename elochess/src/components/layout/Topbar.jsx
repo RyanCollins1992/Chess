@@ -8,6 +8,7 @@ const PAGE_TITLES = {
   'spaced-review':  'Spaced Review',
   'progress':       'My Progress',
   'import-games':   'Import Games',
+  'scout-opponent': 'Scout Opponent',
   'game-review':    'Game Review',
   'elo-roadmap':    'ELO Roadmap',
   'favourites':     'Favourites',

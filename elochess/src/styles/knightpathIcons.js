@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Brain, BookOpen, GraduationCap, Target, Bookmark, Star,
   Zap, Crown, Flag, RefreshCcw, Hash, Cpu, Gamepad2, Upload, Eye,
-  TrendingUp, Map, Settings, Search, Menu, Flame, Trophy,
+  TrendingUp, Map, Settings, Search, Menu, Flame, Trophy, Crosshair,
 } from 'lucide-react'
 
 /**
@@ -29,6 +29,7 @@ export const KNIGHTPATH_NAV_ICONS = {
   'vs-coach': Cpu,
   'free-play': Gamepad2,
   'import-games': Upload,
+  'scout-opponent': Crosshair,
   'game-review': Eye,
   progress: TrendingUp,
   'elo-roadmap': Map,

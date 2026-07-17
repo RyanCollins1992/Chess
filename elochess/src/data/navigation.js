@@ -40,8 +40,9 @@ export const NAV = [
   { id: 'piece-values',  label: 'Piece Values',   icon: '⚖', },
 
   { section: 'MY GAMES' },
-  { id: 'import-games',  label: 'Import Games',   icon: '✉', },
-  { id: 'game-review',   label: 'Game Review',    icon: '♜', },
+  { id: 'import-games',   label: 'Import Games',   icon: '✉', },
+  { id: 'scout-opponent', label: 'Scout Opponent', icon: '◎', },
+  { id: 'game-review',    label: 'Game Review',    icon: '♜', },
 
   { section: 'PROGRESS' },
   { id: 'progress',      label: 'My Progress',    icon: '✦', },

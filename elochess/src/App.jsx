@@ -21,6 +21,7 @@ import EloRoadmapPage     from './pages/EloRoadmapPage'
 import ImportGamesPage    from './pages/ImportGamesPage'
 import GameReviewPage     from './pages/GameReviewPage'
 import LearnOpeningsPage  from './pages/LearnOpeningsPage'
+import ScoutOpponentPage  from './pages/ScoutOpponentPage'
 
 const PAGES = {
   'dashboard':       <DashboardPage />,
@@ -40,6 +41,7 @@ const PAGES = {
   'piece-values':    <PieceValuesPage />,
   'elo-roadmap':     <EloRoadmapPage />,
   'import-games':    <ImportGamesPage />,
+  'scout-opponent':  <ScoutOpponentPage />,
   'game-review':     <GameReviewPage />,
   'learn-openings':  <LearnOpeningsPage />,
 }
