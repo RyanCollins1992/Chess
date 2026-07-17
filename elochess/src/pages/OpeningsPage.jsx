@@ -270,8 +270,7 @@ function TrapStudy({ trap, showToast }) {
   }
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
-    console.log('TrapStudy.handleDrop', { from, to, moveIdx: moveIdxRef.current })
-    if (complete || browseMode) { console.log('TrapStudy: ignored (complete or browseMode)'); return false }
+    if (complete || browseMode) return false
 
     const expected  = trap.moves[moveIdxRef.current]
     // Scripted underpromotions (e.g. Lasker Trap's "fxg1=N+") need the drag to
@@ -283,7 +282,6 @@ function TrapStudy({ trap, showToast }) {
 
     const normalize = s => s.replace(/[+#!?]/g, '')
 
-    console.log('TrapStudy: move result', result)
     if (normalize(result.san) === normalize(expected)) {
       setDrillPreviewIdx(null)
       setFlash('correct')
@@ -308,7 +306,6 @@ function TrapStudy({ trap, showToast }) {
       }
     } else {
       undo()
-      console.log('TrapStudy: wrong move', { attempted: result && result.san, expected })
       setFlash('wrong')
       mistakesRef.current += 1
       setMistakes(m => m + 1)

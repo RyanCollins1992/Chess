@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { Chess } from 'chess.js'
 import MemoryDrillPage from './MemoryDrillPage'
 import { TRAPS } from '../data/traps'
@@ -10,7 +10,10 @@ const click = (container, id) => fireEvent.click(container.querySelector(`[data-
 // up on screen isn't controllable directly — read its name off the DOM,
 // look it up in TRAPS, and replay its own moves through chess.js to get
 // real (from, to) squares for each ply, rather than hardcoding one trap
-// and hoping the shuffle picks it.
+// and hoping the shuffle picks it. Filtered to White traps (colorFilter:
+// 'white' below) means the "hero" color is always White here, so only the
+// even-indexed plies are ever user-drilled — Black's replies auto-play via
+// the component's own 500ms setTimeout, same as OpeningsPage's TrapStudy.
 function solveDrillCard(container) {
   const nameEl = container.querySelector('.w-56 .font-bold.text-white')
   const trap = TRAPS.find(t => t.name === nameEl.textContent)
@@ -19,7 +22,7 @@ function solveDrillCard(container) {
     const move = chess.move(san)
     return { from: move.from, to: move.to }
   })
-  return { trap, plies }
+  return { trap, whiteMoves: plies.filter((_, i) => i % 2 === 0) }
 }
 
 describe('MemoryDrillPage', () => {
@@ -57,24 +60,40 @@ describe('MemoryDrillPage', () => {
     expect(screen.getByText('1/5')).toBeInTheDocument()
   })
 
-  it('playing the correct moves for the shown trap completes the card', async () => {
-    const { container } = render(<MemoryDrillPage />)
-    fireEvent.click(screen.getByText('♔ White'))
-    fireEvent.click(screen.getByText('−'))
-    fireEvent.click(screen.getByText('−')) // size 5
-    fireEvent.click(screen.getByText('Start Drill'))
+  // Fake timers make the auto-played Black reply (a real setTimeout inside
+  // the component) deterministic and instant instead of racing a fixed
+  // real-clock delay, which was flaky under full-suite CPU contention.
+  describe('with the auto-played opponent reply', () => {
+    beforeEach(() => { vi.useFakeTimers() })
+    afterEach(() => { vi.useRealTimers() })
 
-    const { plies } = solveDrillCard(container)
-    // A white trap means every ply is user-drilled (no auto-play interleaving).
-    for (const { from, to } of plies) {
-      click(container, from)
-      click(container, to)
-      // small settle between moves; the component uses its own internal
-      // timeouts for flash/auto-advance, real timers are fine here.
-      await new Promise(r => setTimeout(r, 0))
-    }
+    it('playing the correct moves for the shown trap completes the card', () => {
+      const { container } = render(<MemoryDrillPage />)
+      fireEvent.click(screen.getByText('♔ White'))
+      fireEvent.click(screen.getByText('−'))
+      fireEvent.click(screen.getByText('−')) // size 5
+      fireEvent.click(screen.getByText('Start Drill'))
 
-    expect(await screen.findByText('Perfect')).toBeInTheDocument()
+      const { trap, whiteMoves } = solveDrillCard(container)
+      whiteMoves.forEach(({ from, to }, i) => {
+        click(container, from)
+        click(container, to)
+        if (i < whiteMoves.length - 1) {
+          act(() => { vi.advanceTimersByTime(500) }) // let Black's auto-played reply land
+        }
+      })
+      // A drill can end on either side's move — an even total move count
+      // means the last ply is Black's, still pending as one final
+      // auto-played reply after the last White click above.
+      if (trap.moves.length % 2 === 0) {
+        act(() => { vi.advanceTimersByTime(500) })
+      }
+
+      // "Perfect" renders as soon as `done` is set — no need to advance the
+      // trailing 700ms timer that only schedules onResult() (which would
+      // advance to the next card/results screen and blow away this assertion).
+      expect(screen.getByText('Perfect')).toBeInTheDocument()
+    })
   })
 
   it('Skip advances to the next card and records a non-passed result', () => {
