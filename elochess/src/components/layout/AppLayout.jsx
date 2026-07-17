@@ -5,8 +5,10 @@ import AICoachPanel from '../ui/AICoachPanel'
 import Toast from '../ui/Toast'
 import CommandPalette from '../ui/CommandPalette'
 import OnboardingFlow from '../ui/OnboardingFlow'
+import ConsentBanner from '../ui/ConsentBanner'
 import { useAppStore } from '../../store/useAppStore'
 import { KNIGHTPATH_THEME, KNIGHTPATH_DARK_THEME } from '../../styles/knightpath'
+import { initAnalyticsIfConsented, trackPageView } from '../../core/analytics'
 
 // Tailwind's opacity modifiers (bg-gold/10, text-danger/30, ...) need the
 // underlying CSS variable to be an "R G B" triplet it can drop into
@@ -64,6 +66,17 @@ export default function AppLayout({ children }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  // Resumes analytics for a returning visitor who already accepted in a
+  // previous session — does nothing if they haven't decided yet or rejected.
+  useEffect(() => { initAnalyticsIfConsented() }, [])
+
+  // This is a single-page app with no real URL routing (currentPage lives
+  // here in the store, not the address bar), so GA's automatic on-load
+  // pageview only ever fires once — send a page_view manually on every
+  // in-app navigation instead. No-ops until analytics has actually loaded.
+  const currentPage = useAppStore(s => s.currentPage)
+  useEffect(() => { trackPageView(currentPage) }, [currentPage])
+
   return (
     <div className="flex h-full bg-bg overflow-hidden">
       {/* Sidebar */}
@@ -89,6 +102,9 @@ export default function AppLayout({ children }) {
 
       {/* First-run welcome flow — renders nothing once settings.onboardingComplete is set */}
       <OnboardingFlow />
+
+      {/* Analytics consent — renders nothing once the choice has been made */}
+      <ConsentBanner />
     </div>
   )
 }

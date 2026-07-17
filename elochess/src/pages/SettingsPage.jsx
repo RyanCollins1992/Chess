@@ -3,10 +3,14 @@ import { useAppStore } from '../store/useAppStore'
 import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
 import { PIECE_STYLES, DEFAULT_PIECE_STYLE_ID } from '../styles/pieceStyles'
+import { getAnalyticsConsent, setAnalyticsConsent } from '../core/analytics'
 
 export default function SettingsPage() {
   const { settings, updateSettings, showToast, refreshProgress } = useAppStore()
   const [elo, setElo] = useState(progressManager.currentElo)
+  // Lets the choice made in ConsentBanner.jsx (or a fresh one) be changed
+  // later — GDPR requires withdrawing consent to be as easy as giving it.
+  const [analyticsConsent, setAnalyticsConsentState] = useState(getAnalyticsConsent)
 
   const save = (key, value) => {
     updateSettings({ [key]: value })
@@ -221,6 +225,12 @@ export default function SettingsPage() {
               <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Privacy Policy</a>
             </p>
           </div>
+          <ToggleRow
+            label="Analytics"
+            desc="Google Analytics — visits and active users, no personal data. Off until you choose to enable it."
+            value={analyticsConsent === 'accepted'}
+            onChange={v => { setAnalyticsConsent(v); setAnalyticsConsentState(v ? 'accepted' : 'rejected') }}
+          />
         </div>
       </Section>
 

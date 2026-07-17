@@ -10,6 +10,7 @@ describe('SettingsPage', () => {
       settings: { darkMode: false, pieceStyle: 'classic', showCoords: true, animateMoves: true, sounds: true, autoAdvance: true, showHints: true, dailyTarget: 20, chesscomUsername: '' },
       toast: null,
     })
+    localStorage.removeItem('mentorchess-analytics-consent')
   })
 
   it('shows the current ELO from ProgressManager in the input', () => {
@@ -78,6 +79,25 @@ describe('SettingsPage', () => {
     render(<SettingsPage />)
     const link = screen.getByText('Privacy Policy')
     expect(link.closest('a')).toHaveAttribute('href', '/privacy.html')
+  })
+
+  it('the Analytics toggle is off by default (no consent decision yet)', () => {
+    render(<SettingsPage />)
+    const toggle = screen.getByText('Analytics').closest('div').parentElement.parentElement.querySelector('button')
+    expect(toggle.className).not.toContain('bg-gold')
+  })
+
+  it('turning Analytics on records acceptance in localStorage', () => {
+    render(<SettingsPage />)
+    fireEvent.click(screen.getByText('Analytics').closest('div').parentElement.parentElement.querySelector('button'))
+    expect(localStorage.getItem('mentorchess-analytics-consent')).toBe('accepted')
+  })
+
+  it('turning Analytics off after accepting records the rejection', () => {
+    localStorage.setItem('mentorchess-analytics-consent', 'accepted')
+    render(<SettingsPage />)
+    fireEvent.click(screen.getByText('Analytics').closest('div').parentElement.parentElement.querySelector('button'))
+    expect(localStorage.getItem('mentorchess-analytics-consent')).toBe('rejected')
   })
 })
 
