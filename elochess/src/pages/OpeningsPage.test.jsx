@@ -65,18 +65,19 @@ describe('OpeningsPage', () => {
     expect(screen.getByText('No results found')).toBeInTheDocument()
   })
 
-  it('selecting a repertoire line shows it fully browsed by default', () => {
+  it('selecting a repertoire line starts at the beginning of the line, not the fully-played-out end', () => {
     render(<OpeningsPage />)
     fireEvent.click(screen.getByText('Italian Game: Giuoco Piano'))
     expect(screen.getByText('📖 Opening Theory')).toBeInTheDocument()
-    expect(screen.getByText('Move 8 of 8')).toBeInTheDocument() // 15 half-moves -> ceil(15/2)=8, full line
+    expect(screen.getByText('Start')).toBeInTheDocument()
+    expect(screen.getByText('◀ Prev')).toBeDisabled()
   })
 
-  it('Prev in the repertoire browser steps back one ply', () => {
+  it('Next in the repertoire browser steps forward one ply from the start', () => {
     render(<OpeningsPage />)
     fireEvent.click(screen.getByText('Italian Game: Giuoco Piano'))
-    fireEvent.click(screen.getByText('◀ Prev'))
-    expect(screen.getByText('Move 7 of 8')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Next ▶'))
+    expect(screen.getByText('Move 1 of 8')).toBeInTheDocument()
   })
 
   it('selecting a trap shows Drill mode with the trap name and key concept', () => {

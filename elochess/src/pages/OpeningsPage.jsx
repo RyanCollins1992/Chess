@@ -498,7 +498,9 @@ function RepertoireStudy({ line, group }) {
     }
     return fens
   })
-  const [browseIdx, setBrowseIdx] = useState(browseFens.length - 1)
+  // Starts at the beginning of the line (Ryan asked to stop landing on the
+  // fully-played-out final position by default) — was `browseFens.length - 1`.
+  const [browseIdx, setBrowseIdx] = useState(0)
 
   return (
     <div className="flex h-full overflow-hidden">

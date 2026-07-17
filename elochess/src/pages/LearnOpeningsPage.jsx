@@ -402,10 +402,13 @@ const OPENINGS = [
 export default function LearnOpeningsPage() {
   const [selected, setSelected]     = useState(OPENINGS[0])
   const [selectedLine, setSelectedLine] = useState(OPENINGS[0].lines[0])
-  const { fen, tryMove, reset } = useChessBoard(selectedLine.fen)
+  // Starts at the beginning of the line, not `selectedLine.fen` (the fully-
+  // played-out final position) — Ryan asked to stop landing on the last
+  // move by default, same fix as OpeningsPage.jsx's RepertoireStudy.
+  const { fen, tryMove, reset } = useChessBoard()
 
   useEffect(() => {
-    reset(selectedLine.fen)
+    reset()
   }, [selectedLine, reset])
   const navigate = useAppStore(s => s.navigate)
 
