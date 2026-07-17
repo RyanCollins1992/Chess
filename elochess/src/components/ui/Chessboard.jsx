@@ -181,6 +181,7 @@ export function Chessboard({
   const selectedSquare = selection?.atPosition === position ? selection.square : null
 
   const animateMoves = useAppStore(s => s.settings.animateMoves) !== false
+  const showCoords = useAppStore(s => s.settings.showCoords) !== false
   const pieceStyle = useAppStore(s => s.settings.pieceStyle) || DEFAULT_PIECE_STYLE_ID
   const theme = KNIGHTPATH_THEME
 
@@ -265,6 +266,7 @@ export function Chessboard({
           squareStyles: mergedSquareStyles,
           allowDragging: arePiecesDraggable ?? options.allowDragging,
           showAnimations: options.showAnimations ?? animateMoves,
+          showNotation: options.showNotation ?? showCoords,
           animationDurationInMs: options.animationDurationInMs ?? DURATION.quick * 1000,
           onPieceDrop,
           onSquareClick: handleSquareClick,
