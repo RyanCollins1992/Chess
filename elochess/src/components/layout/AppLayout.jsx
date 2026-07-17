@@ -5,7 +5,7 @@ import AICoachPanel from '../ui/AICoachPanel'
 import Toast from '../ui/Toast'
 import CommandPalette from '../ui/CommandPalette'
 import { useAppStore } from '../../store/useAppStore'
-import { KNIGHTPATH_THEME } from '../../styles/knightpath'
+import { KNIGHTPATH_THEME, KNIGHTPATH_DARK_THEME } from '../../styles/knightpath'
 
 // Tailwind's opacity modifiers (bg-gold/10, text-danger/30, ...) need the
 // underlying CSS variable to be an "R G B" triplet it can drop into
@@ -25,16 +25,16 @@ export default function AppLayout({ children }) {
   const [coachOpen, setCoachOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const toast = useAppStore(s => s.toast)
+  const darkMode = useAppStore(s => s.settings.darkMode)
 
-  // Applies KnightPath's CSS variables to the document root once on mount.
-  // This app only has one visual identity now, so there's nothing to switch
-  // between — kept as a runtime effect (rather than inlining every value as
-  // static CSS) only because dozens of components already read these via
-  // var(--color-x) / Tailwind's bg-x utilities; rewriting all of those to
-  // hardcoded values would be a much larger, riskier change than dropping
-  // the now-unused multi-theme resolution this used to do.
+  // Applies the active theme's CSS variables to the document root — re-runs
+  // whenever the Dark Mode setting changes. Kept as a runtime effect (rather
+  // than inlining every value as static CSS) because dozens of components
+  // already read these via var(--color-x) / Tailwind's bg-x utilities;
+  // rewriting all of those to hardcoded values would be a much larger,
+  // riskier change than swapping which theme object gets applied.
   useEffect(() => {
-    const theme = KNIGHTPATH_THEME
+    const theme = darkMode ? KNIGHTPATH_DARK_THEME : KNIGHTPATH_THEME
     const root = document.documentElement
     for (const [key, value] of Object.entries(theme.colors)) {
       root.style.setProperty(`--color-${key}`, value)
@@ -48,7 +48,7 @@ export default function AppLayout({ children }) {
     root.style.setProperty('--color-sidebar-border', theme.sidebarBorder)
     root.style.setProperty('--color-sidebar-text', theme.sidebarText)
     root.style.setProperty('--color-sidebar-muted', theme.sidebarMuted)
-  }, [])
+  }, [darkMode])
 
   // Global Cmd/Ctrl+K to open the command palette from anywhere in the app.
   useEffect(() => {

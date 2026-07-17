@@ -216,15 +216,18 @@ function RatingChart({ data }) {
         <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <defs>
             <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2D7A52" stopOpacity={0.14} />
-              <stop offset="95%" stopColor="#2D7A52" stopOpacity={0} />
+              <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.14} />
+              <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-          <XAxis dataKey="m" tick={{ fontSize: 11, fill: '#8A8176' }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: '#8A8176' }} axisLine={false} tickLine={false} domain={domain} />
-          <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 4, fontSize: 12, padding: '6px 10px' }} formatter={(v) => [`${v} ELO`, 'Rating']} />
-          <Area type="monotone" dataKey="v" stroke="#2D7A52" strokeWidth={2} fill="url(#eloGrad)" dot={false} />
+          {/* SVG fill/stroke accept CSS var() directly, so this reads the same
+              --color-* variables AppLayout swaps for Dark Mode — no separate
+              dark-chart-colors config needed. */}
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <XAxis dataKey="m" tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} domain={domain} />
+          <Tooltip contentStyle={{ background: 'var(--color-bg2)', border: '1px solid var(--color-border)', borderRadius: 4, fontSize: 12, padding: '6px 10px', color: 'var(--color-white)' }} formatter={(v) => [`${v} ELO`, 'Rating']} />
+          <Area type="monotone" dataKey="v" stroke="var(--color-accent)" strokeWidth={2} fill="url(#eloGrad)" dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>

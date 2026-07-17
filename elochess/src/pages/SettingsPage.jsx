@@ -65,6 +65,16 @@ export default function SettingsPage() {
         </div>
       </Section>
 
+      {/* Appearance */}
+      <Section title="🌗 Appearance">
+        <ToggleRow
+          label="Dark mode"
+          desc="Dark navy/charcoal surfaces with the same spruce-green accent"
+          value={settings.darkMode === true}
+          onChange={v => save('darkMode', v)}
+        />
+      </Section>
+
       {/* Piece Style */}
       <Section title="♞ Piece Style">
         <div className="grid grid-cols-2 gap-2">

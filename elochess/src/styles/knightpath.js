@@ -44,3 +44,39 @@ export const KNIGHTPATH_THEME = {
   // muted tone the way this app's other themes get away with for both.
   sidebarMuted: '#8B91A8',
 }
+
+/**
+ * KnightPath Dark — same layout/typography/accent identity as the light
+ * theme above, built with the standard 60/30/10 dark-UI split (60% base
+ * canvas, 30% card/surface, 10% accent used only for interactive
+ * elements), rather than a literal color-inversion of the light palette.
+ * Kept the same spruce-green accent (gold/gold2/accent/accent2) as the
+ * light theme, brightened slightly — dark backgrounds need a bit more
+ * saturation/lightness for the same accent to read with equal visual
+ * weight — rather than switching to a different named palette, so the
+ * brand identity stays the same between modes.
+ *
+ * The sidebar was already dark navy in the *light* theme (KnightPath's
+ * two-tone layout), so it's carried over unchanged here rather than
+ * re-tinted — it already sits comfortably against the new dark content
+ * area. The chessboard's wood-tone squares are also left unchanged:
+ * chess boards conventionally stay light/wood-toned regardless of the
+ * surrounding app theme in every major chess app, not something this
+ * toggle should touch.
+ */
+export const KNIGHTPATH_DARK_THEME = {
+  ...KNIGHTPATH_THEME,
+  id: 'knightpath-dark',
+  name: 'KnightPath Dark',
+  description: 'Dark navy/charcoal dashboard with the same spruce-green accent as KnightPath, brightened for contrast.',
+  light: false,
+  colors: {
+    bg: '#14161C', bg2: '#1E2129', bg3: '#262A35',
+    border: '#333849',
+    gold: '#3DA36B', gold2: '#2D7A52',
+    accent: '#3DA36B', accent2: '#6EE7B0',
+    muted: '#9CA3AF', dim: '#4B5160',
+    text: '#E8EAF0', white: '#E8EAF0',
+    danger: '#F87171',
+  },
+}
