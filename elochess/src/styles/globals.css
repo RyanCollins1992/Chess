@@ -10,35 +10,35 @@
      now) so first paint is never unstyled before AppLayout's effect applies
      them — see src/styles/knightpath.js. */
   :root {
-    --color-bg: #F0EBE0;
+    --color-bg: #F8F4E9;
     --color-bg2: #FFFFFF;
-    --color-bg3: #E8E2D6;
-    --color-border: #DBD7CE;
-    --color-gold: #2D7A52;
-    --color-gold2: #256A46;
-    --color-accent: #2D7A52;
-    --color-accent2: #5DBF8A;
+    --color-bg3: #EDE6D6;
+    --color-border: #DFD6C0;
+    --color-gold: #8C6A28;
+    --color-gold2: #6E5220;
+    --color-accent: #8C6A28;
+    --color-accent2: #B08D42;
     --color-muted: #8A8176;
     --color-dim: #C5BFB2;
-    --color-text: #1C2130;
-    --color-white: #1C2130;
+    --color-text: #1C1A15;
+    --color-white: #1C1A15;
     --color-danger: #DC2626;
     /* RGB-triplet companions of the hex vars above, so Tailwind's opacity
        modifiers (bg-gold/10 etc.) have something alpha-blendable before
        AppLayout's effect runs — see AppLayout.jsx's hexToRgbTriplet comment
        for why hex itself can't be used here. */
-    --color-bg-rgb: 240 235 224;
+    --color-bg-rgb: 248 244 233;
     --color-bg2-rgb: 255 255 255;
-    --color-bg3-rgb: 232 226 214;
-    --color-border-rgb: 219 215 206;
-    --color-gold-rgb: 45 122 82;
-    --color-gold2-rgb: 37 106 70;
-    --color-accent-rgb: 45 122 82;
-    --color-accent2-rgb: 93 191 138;
+    --color-bg3-rgb: 237 230 214;
+    --color-border-rgb: 223 214 192;
+    --color-gold-rgb: 140 106 40;
+    --color-gold2-rgb: 110 82 32;
+    --color-accent-rgb: 140 106 40;
+    --color-accent2-rgb: 176 141 66;
     --color-muted-rgb: 138 129 118;
     --color-dim-rgb: 197 191 178;
-    --color-text-rgb: 28 33 48;
-    --color-white-rgb: 28 33 48;
+    --color-text-rgb: 28 26 21;
+    --color-white-rgb: 28 26 21;
     --color-danger-rgb: 220 38 38;
     --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;

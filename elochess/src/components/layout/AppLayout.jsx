@@ -42,8 +42,9 @@ export default function AppLayout({ children }) {
     }
     root.style.setProperty('--font-heading', theme.headingFont)
     root.style.setProperty('--font-body', theme.bodyFont)
-    // KnightPath's sidebar is dark navy while its content-area bg2 is white —
-    // a two-tone layout (see styles/knightpath.js).
+    // KnightPath's sidebar is a fixed near-black in both modes while its
+    // content-area bg2 switches with the theme — a two-tone layout (see
+    // styles/knightpath.js).
     root.style.setProperty('--color-sidebar-bg', theme.sidebarBg)
     root.style.setProperty('--color-sidebar-border', theme.sidebarBorder)
     root.style.setProperty('--color-sidebar-text', theme.sidebarText)

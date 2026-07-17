@@ -16,10 +16,11 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar — dark navy against a cream content area (a two-tone
-          layout), so it reads --color-sidebar-bg/-border/-text/-muted
-          instead of the shared bg2/border/white/muted the content area
-          uses — see styles/knightpath.js. */}
+      {/* Sidebar — fixed near-black (matching the logo) against a content
+          area that switches with the mode (a two-tone layout), so it reads
+          --color-sidebar-bg/-border/-text/-muted instead of the shared
+          bg2/border/white/muted the content area uses — see
+          styles/knightpath.js. */}
       <aside
         className={`
           fixed top-0 left-0 h-full w-56 z-40 flex flex-col

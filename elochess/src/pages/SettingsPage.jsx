@@ -69,7 +69,7 @@ export default function SettingsPage() {
       <Section title="🌗 Appearance">
         <ToggleRow
           label="Dark mode"
-          desc="Dark navy/charcoal surfaces with the same spruce-green accent"
+          desc="Near-black surfaces with the logo's own gold accent"
           value={settings.darkMode === true}
           onChange={v => save('darkMode', v)}
         />
