@@ -1,0 +1,91 @@
+import { describe, it, expect, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import PuzzlesPage from './PuzzlesPage'
+import { useAppStore } from '../store/useAppStore'
+
+const click = (container, id) => fireEvent.click(container.querySelector(`[data-square="${id}"]`))
+
+describe('PuzzlesPage', () => {
+  beforeEach(() => {
+    useAppStore.setState({ solvedPuzzles: [] })
+  })
+
+  it('shows a placeholder until a puzzle is selected', () => {
+    render(<PuzzlesPage />)
+    expect(screen.getByText('Select a puzzle')).toBeInTheDocument()
+  })
+
+  it('theme filter narrows the puzzle list', () => {
+    render(<PuzzlesPage />)
+    expect(screen.getByText('Back Rank Checkmate')).toBeInTheDocument()
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'Fork' } })
+    expect(screen.queryByText('Back Rank Checkmate')).not.toBeInTheDocument()
+    expect(screen.getByText('Fork the King and Rook')).toBeInTheDocument()
+  })
+
+  it('difficulty filter narrows the puzzle list', () => {
+    render(<PuzzlesPage />)
+    fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: 'advanced' } })
+    expect(screen.queryByText('Back Rank Checkmate')).not.toBeInTheDocument()
+    // "Queen Sacrifice" isn't unique — the puzzle data has two entries with
+    // that exact title (p6 and p89) — pick one that genuinely is.
+    expect(screen.getByText('Discovered Check')).toBeInTheDocument()
+  })
+
+  it('selecting a puzzle shows its board and hint toggle', () => {
+    render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    expect(screen.getByText('💡 Show Hint')).toBeInTheDocument()
+  })
+
+  it('Show Hint reveals the hint text', () => {
+    render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    fireEvent.click(screen.getByText('💡 Show Hint'))
+    expect(screen.getByText('The enemy king is trapped on the back rank')).toBeInTheDocument()
+    expect(screen.getByText('💡 Hide Hint')).toBeInTheDocument()
+  })
+
+  it('playing the correct solution move marks the puzzle solved', () => {
+    const { container } = render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    click(container, 'd1')
+    click(container, 'd8')
+
+    expect(screen.getByText('✅ Solved!')).toBeInTheDocument()
+    expect(screen.getByText('First try!')).toBeInTheDocument()
+    expect(useAppStore.getState().solvedPuzzles).toContain('p1')
+  })
+
+  it('an incorrect move does not solve it, and a subsequent solve is no longer "first try"', () => {
+    const { container } = render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    click(container, 'd1')
+    click(container, 'd5') // legal but wrong
+
+    expect(screen.queryByText('✅ Solved!')).not.toBeInTheDocument()
+
+    // The wrong move gets undone (see handleDrop's undo() on mismatch), so
+    // the rook is back on d1, not left sitting on d5.
+    click(container, 'd1')
+    click(container, 'd8') // now the correct move
+
+    expect(screen.getByText('✅ Solved!')).toBeInTheDocument()
+    expect(screen.queryByText('First try!')).not.toBeInTheDocument()
+  })
+
+  it('Reset restores the board to the puzzle start position', () => {
+    const { container } = render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    click(container, 'd1')
+    click(container, 'd5') // move the rook off its start square
+    fireEvent.click(screen.getByText('↺ Reset'))
+
+    // If the reset genuinely put the rook back on d1, the same
+    // click-to-move sequence used elsewhere in this file to solve the
+    // puzzle should work again from scratch.
+    click(container, 'd1')
+    click(container, 'd8')
+    expect(screen.getByText('✅ Solved!')).toBeInTheDocument()
+  })
+})
