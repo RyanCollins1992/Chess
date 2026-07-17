@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { progressManager } from '../core/ProgressManager'
@@ -9,7 +9,17 @@ const THEMES = ['All', 'Fork', 'Checkmate', 'Tactics', 'Pin', 'Discovery', 'Sacr
 const DIFFICULTIES = ['All', 'beginner', 'intermediate', 'advanced']
 
 export default function PuzzlesPage() {
-  const [selectedPuzzle, setSelectedPuzzle] = useState(null)
+  // Restores whichever puzzle was open on the last visit — a refresh
+  // (or navigating away and back) shouldn't drop you back on the
+  // "Select a puzzle" placeholder.
+  const [selectedPuzzle, setSelectedPuzzle] = useState(() => {
+    const savedId = localStorage.getItem('mentorchess-selected-puzzle')
+    return savedId ? PUZZLES.find(p => p.id === savedId) || null : null
+  })
+  useEffect(() => {
+    if (selectedPuzzle) localStorage.setItem('mentorchess-selected-puzzle', selectedPuzzle.id)
+    else localStorage.removeItem('mentorchess-selected-puzzle')
+  }, [selectedPuzzle])
   const [theme, setTheme]         = useState('All')
   const [difficulty, setDifficulty] = useState('All')
   const solved = useAppStore(s => s.solvedPuzzles)

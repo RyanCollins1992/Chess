@@ -3,11 +3,15 @@ import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
 
 export const useAppStore = create((set, get) => ({
-  // ── Navigation ───────────────────────────────────────────────────
-  currentPage:    'openings',
-  sidebarOpen:    false,
+  // ── Navigation (currentPage persisted so a refresh keeps you on the
+  //    same page instead of bouncing back to the Openings default) ────
+  currentPage: localStorage.getItem('mentorchess-current-page') || 'openings',
+  sidebarOpen: false,
 
-  navigate: (page) => set({ currentPage: page, sidebarOpen: false }),
+  navigate: (page) => {
+    localStorage.setItem('mentorchess-current-page', page)
+    set({ currentPage: page, sidebarOpen: false })
+  },
   toggleSidebar: () => set(s => ({ sidebarOpen: !s.sidebarOpen })),
   closeSidebar:  () => set({ sidebarOpen: false }),
 

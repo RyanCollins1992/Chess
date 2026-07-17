@@ -25,6 +25,23 @@ describe('useAppStore', () => {
       expect(useAppStore.getState().currentPage).toBe('settings')
       expect(useAppStore.getState().sidebarOpen).toBe(false)
     })
+
+    it('defaults to the Openings page when nothing has been saved yet', () => {
+      expect(useAppStore.getState().currentPage).toBe('openings')
+    })
+
+    // A refresh re-imports the module fresh — this reproduces that by
+    // resetting modules and re-importing, same as beforeEach does between
+    // tests, but mid-test so the localStorage write from navigate() above
+    // is what the fresh import has to read back.
+    it('navigate persists the page, and a fresh load restores it instead of defaulting to Openings', async () => {
+      useAppStore.getState().navigate('puzzles')
+      expect(localStorage.getItem('mentorchess-current-page')).toBe('puzzles')
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import('./useAppStore')
+      expect(freshStore.getState().currentPage).toBe('puzzles')
+    })
   })
 
   describe('sidebar toggles', () => {

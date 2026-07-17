@@ -8,6 +8,7 @@ const click = (container, id) => fireEvent.click(container.querySelector(`[data-
 describe('PuzzlesPage', () => {
   beforeEach(() => {
     useAppStore.setState({ solvedPuzzles: [] })
+    localStorage.removeItem('mentorchess-selected-puzzle')
   })
 
   it('shows a placeholder until a puzzle is selected', () => {
@@ -87,5 +88,21 @@ describe('PuzzlesPage', () => {
     click(container, 'd1')
     click(container, 'd8')
     expect(screen.getByText('✅ Solved!')).toBeInTheDocument()
+  })
+
+  it('selecting a puzzle persists it so a refresh reopens the same one', () => {
+    render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    expect(localStorage.getItem('mentorchess-selected-puzzle')).toBe('p1')
+  })
+
+  it('remounting the page (simulating a refresh) restores the previously-open puzzle', () => {
+    const { unmount } = render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    unmount()
+
+    render(<PuzzlesPage />)
+    expect(screen.getByText('💡 Show Hint')).toBeInTheDocument()
+    expect(screen.queryByText('Select a puzzle')).not.toBeInTheDocument()
   })
 })
