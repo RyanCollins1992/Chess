@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Chess } from 'chess.js'
 import { Chessboard } from '../components/ui/Chessboard'
 import { useChessBoard } from '../hooks/useChessBoard'
@@ -64,6 +64,15 @@ function DrillCard({ trap, index, total, onResult }) {
   const [flash, setFlash]       = useState(null)
   const [done, setDone]         = useState(false)
 
+  // handleDrop schedules chained setTimeouts (flash → auto-play the
+  // opponent's reply → onResult) — none of them self-cancel, so without
+  // tracking + clearing them on unmount a callback can still fire after the
+  // card has been swapped out (DrillCard remounts via key={key} on every
+  // card change) or the page has navigated away.
+  const timersRef = useRef([])
+  const setTimer = (fn, ms) => { timersRef.current.push(setTimeout(fn, ms)) }
+  useEffect(() => () => { timersRef.current.forEach(clearTimeout) }, [])
+
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (done) return false
     const expected = trap.moves[moveIdxRef.current]
@@ -81,9 +90,9 @@ function DrillCard({ trap, index, total, onResult }) {
       setMoveIdx(next)
       if (next >= trap.moves.length) {
         setDone(true)
-        setTimeout(() => onResult(trap, mistakes === 0, mistakes), 700)
+        setTimer(() => onResult(trap, mistakes === 0, mistakes), 700)
       } else {
-        setTimeout(() => {
+        setTimer(() => {
           setFlash(null)
           if (move(trap.moves[next])) {
             const after = next + 1
@@ -93,7 +102,7 @@ function DrillCard({ trap, index, total, onResult }) {
             // opponent's reply, not the "hero" color's move) — check here too.
             if (after >= trap.moves.length) {
               setDone(true)
-              setTimeout(() => onResult(trap, mistakes === 0, mistakes), 700)
+              setTimer(() => onResult(trap, mistakes === 0, mistakes), 700)
             }
           }
         }, 400)
@@ -102,7 +111,7 @@ function DrillCard({ trap, index, total, onResult }) {
       undo()
       setFlash('wrong')
       setMistakes(m => m + 1)
-      setTimeout(() => setFlash(null), 700)
+      setTimer(() => setFlash(null), 700)
     }
     return true
   }
