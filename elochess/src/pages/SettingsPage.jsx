@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
+import { PIECE_STYLES, DEFAULT_PIECE_STYLE_ID } from '../styles/pieceStyles'
 
 export default function SettingsPage() {
   const { settings, updateSettings, showToast, refreshProgress } = useAppStore()
@@ -61,6 +62,28 @@ export default function SettingsPage() {
               className="w-full bg-bg3 border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-gold/50"
             />
           </div>
+        </div>
+      </Section>
+
+      {/* Piece Style */}
+      <Section title="♞ Piece Style">
+        <div className="grid grid-cols-2 gap-2">
+          {PIECE_STYLES.map(style => {
+            const active = (settings.pieceStyle || DEFAULT_PIECE_STYLE_ID) === style.id
+            return (
+              <button
+                key={style.id}
+                onClick={() => save('pieceStyle', style.id)}
+                title={style.description}
+                className={`text-left p-2.5 rounded-lg border transition-colors ${
+                  active ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
+                }`}
+              >
+                <div className={`text-xs font-bold ${active ? 'text-gold' : 'text-white'}`}>{style.name}</div>
+                <div className="text-[11px] text-muted mt-0.5">{style.description}</div>
+              </button>
+            )
+          })}
         </div>
       </Section>
 
@@ -147,6 +170,15 @@ export default function SettingsPage() {
               <a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">source</a>),
               licensed under the{' '}
               <a href="https://www.gnu.org/licenses/gpl-3.0.txt" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">GNU GPL v3</a>.
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-white mb-1">Chess Pieces</div>
+            <p className="text-muted">
+              The Fantasy piece style is the{' '}
+              <a href="https://github.com/maurimo/chess-art" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">"Fantasy" set</a>{' '}
+              by Maurizio Monge, licensed under the{' '}
+              <a href="https://github.com/maurimo/chess-art/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">MIT License</a>.
             </p>
           </div>
           <div>
