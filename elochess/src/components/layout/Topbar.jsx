@@ -26,7 +26,7 @@ const PAGE_TITLES = {
 
 export default function Topbar({ onCoachClick, onPaletteClick }) {
   const { currentPage, toggleSidebar, progress, navigate } = useAppStore()
-  const title = PAGE_TITLES[currentPage] || 'EloChess'
+  const title = PAGE_TITLES[currentPage] || 'MentorChess'
   const PageIcon = KNIGHTPATH_NAV_ICONS[currentPage]
 
   return (

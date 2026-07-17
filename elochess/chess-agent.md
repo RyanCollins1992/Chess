@@ -1,4 +1,4 @@
-# EloChess — Chess Knowledge Base
+# MentorChess — Chess Knowledge Base
 
 This file is referenced by the Claude Code agent (CLAUDE.md) to answer chess-related questions during development. Use this as a reference when implementing features, generating content, or debugging chess logic.
 
@@ -164,7 +164,7 @@ stop             → stop analysis
 quit             → exit
 ```
 
-### Depth Guidelines for EloChess
+### Depth Guidelines for MentorChess
 | Use Case | Suggested Depth |
 |---|---|
 | Puzzle hint | depth 10 |

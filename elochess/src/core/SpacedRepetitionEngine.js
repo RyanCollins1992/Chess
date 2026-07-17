@@ -17,7 +17,7 @@ export class SpacedRepetitionEngine extends BaseManager {
   static DEFAULT_EASE = 2.5
 
   constructor() {
-    super('elochess-srs')
+    super('mentorchess-srs')
     this._cards = this._load({})
   }
 

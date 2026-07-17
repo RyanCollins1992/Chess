@@ -31,7 +31,7 @@ export default function SettingsPage() {
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-extrabold text-white font-heading">Settings</h2>
-        <p className="text-muted text-sm mt-1">Customise your EloChess experience</p>
+        <p className="text-muted text-sm mt-1">Customise your MentorChess experience</p>
       </div>
 
       {/* Profile */}
@@ -198,7 +198,7 @@ export default function SettingsPage() {
               <a href="https://support.chess.com/en/articles/9650547-published-data-api" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Chess.com Published-Data API</a>{' '}
               and the{' '}
               <a href="https://lichess.org/api" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Lichess.org API</a>.
-              EloChess is not affiliated with, endorsed by, or sponsored by Chess.com or Lichess.
+              MentorChess is not affiliated with, endorsed by, or sponsored by Chess.com or Lichess.
             </p>
           </div>
           <div>

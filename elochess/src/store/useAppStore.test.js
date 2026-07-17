@@ -54,7 +54,7 @@ describe('useAppStore', () => {
 
     it('persists the merged settings to localStorage', () => {
       useAppStore.getState().updateSettings({ theme: 'dark' })
-      expect(JSON.parse(localStorage.getItem('elochess-settings'))).toEqual({ theme: 'dark' })
+      expect(JSON.parse(localStorage.getItem('mentorchess-settings'))).toEqual({ theme: 'dark' })
     })
 
     it('overwrites a key when patched again', () => {

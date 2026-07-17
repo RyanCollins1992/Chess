@@ -1,6 +1,6 @@
 import { useAppStore } from '../../store/useAppStore'
 import { NAV } from '../../data/navigation'
-import { Crown, Flame, Zap } from 'lucide-react'
+import { Flame, Zap } from 'lucide-react'
 import { KNIGHTPATH_NAV_ICONS } from '../../styles/knightpathIcons'
 
 export default function Sidebar() {
@@ -34,12 +34,10 @@ export default function Sidebar() {
           className="flex items-center gap-2 px-4 py-4 shrink-0"
           style={{ borderBottom: '1px solid var(--color-sidebar-border)' }}
         >
-          <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--color-accent)' }}>
-            <Crown size={13} className="text-white" />
-          </div>
+          <img src="/mentorchess-icon.png" alt="MentorChess" className="w-7 h-7 rounded object-cover shrink-0" />
           <div>
             <div className="font-heading font-bold text-base leading-none tracking-wide" style={{ color: 'var(--color-sidebar-text)' }}>
-              EloChess
+              MentorChess
             </div>
             <div className="text-xs mt-0.5" style={{ color: 'var(--color-sidebar-muted)' }}>
               {progress.totalDrills} drills · {dueCount} due

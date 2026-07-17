@@ -18,7 +18,7 @@ export class ProgressManager extends BaseManager {
   }
 
   constructor() {
-    super('elochess-progress')
+    super('mentorchess-progress')
     this._data = this._load(this._defaultData())
     this._checkDailyStreak()
   }

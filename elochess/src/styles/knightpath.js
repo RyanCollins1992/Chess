@@ -1,5 +1,5 @@
 /**
- * "KnightPath" — EloChess's visual identity, sourced from a Figma Make
+ * "KnightPath" — MentorChess's visual identity, sourced from a Figma Make
  * design Ryan shared (2026-07-15). Values below are copied verbatim from
  * the actual exported source code's `src/styles/theme.css` `:root` block
  * (`Ryan's Brain/Chess Info/Chess ui code/`, a shadcn/ui + Tailwind v4

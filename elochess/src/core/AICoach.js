@@ -32,7 +32,7 @@ export class AICoach extends BaseManager {
   static API_URL     = 'https://text.pollinations.ai/openai'
 
   constructor() {
-    super('elochess-ai-coach')
+    super('mentorchess-ai-coach')
     this._history    = []
     this._isThinking = false
     this._context    = {}
@@ -119,7 +119,7 @@ export class AICoach extends BaseManager {
   _buildSystemPrompt() {
     const { elo = 'unknown', trapName, trapDescription, currentMoves } = this._context
 
-    let prompt = `You are a friendly, expert chess coach inside the EloChess training app. The player's estimated ELO is ${elo}. `
+    let prompt = `You are a friendly, expert chess coach inside the MentorChess training app. The player's estimated ELO is ${elo}. `
     prompt += `You ONLY answer chess-related questions. If asked about anything unrelated to chess, politely decline and redirect to chess topics. `
     prompt += `Give clear, concise explanations in plain English. Use **bold** for key terms. Keep responses under 5 sentences unless the user asks for more detail. `
     prompt += `Tailor advice to the player's ELO level — beginners need simple tips, advanced players can handle deeper concepts. `

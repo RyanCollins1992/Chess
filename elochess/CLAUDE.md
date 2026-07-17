@@ -1,7 +1,7 @@
-# EloChess — Claude Code Agent
+# MentorChess — Claude Code Agent
 
 ## Project Overview
-EloChess is a chess training application targeting **Android, iOS, and Web** via Capacitor.
+MentorChess is a chess training application targeting **Android, iOS, and Web** via Capacitor.
 The dev server runs at `http://localhost:5173`. Always run npm commands from the `elochess/` subfolder.
 
 > 📖 **Chess Knowledge Base:** See `chess-agent.md` in this folder for chess rules, openings, tactics, endgames, ELO ratings, and implementation references. Use it to answer any chess-related questions during development.

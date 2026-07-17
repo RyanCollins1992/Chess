@@ -9,7 +9,7 @@ import { useAppStore } from '../store/useAppStore'
 
 /**
  * Dashboard — landing/overview page, sourced from the KnightPath reference
- * design (Ryan's Figma Make export, 2026-07-15). EloChess had no such page
+ * design (Ryan's Figma Make export, 2026-07-15). MentorChess had no such page
  * before this — it previously landed straight on Openings (see
  * store/useAppStore.js's default currentPage).
  *

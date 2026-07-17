@@ -1,6 +1,6 @@
 {
-  "appId": "com.elochess.app",
-  "appName": "EloChess",
+  "appId": "com.mentorchess.app",
+  "appName": "MentorChess",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"
