@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Chess } from 'chess.js'
 import { Chessboard } from '../components/ui/Chessboard'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
@@ -58,10 +59,26 @@ export default function SpacedReviewPage() {
 }
 
 function DrillCard({ trap, onComplete }) {
-  const { fen, tryMove, undo, move } = useChessBoard(trap.fen)
-  const moveIdxRef = useRef(0)
+  // Array indices are always White's book moves at even positions regardless
+  // of trap.color — for a black trap, the review only makes sense if it
+  // drills BLACK's actual line, so the drill starts with White's first move
+  // already played. Computed once via a lazy initializer, not an effect or
+  // render-time ref mutation (both disallowed by this project's lint rules).
+  const [primed] = useState(() => {
+    if (trap.color !== 'black' || trap.moves.length === 0) return { fen: trap.fen, moveIdx: 0 }
+    const c = new Chess(trap.fen)
+    try {
+      c.move(trap.moves[0])
+      return { fen: c.fen(), moveIdx: 1 }
+    } catch {
+      return { fen: trap.fen, moveIdx: 0 }
+    }
+  })
+
+  const { fen, tryMove, undo, move } = useChessBoard(primed.fen)
+  const moveIdxRef = useRef(primed.moveIdx)
   const mistakesRef = useRef(0)
-  const [moveIdx, setMoveIdx] = useState(0)
+  const [moveIdx, setMoveIdx] = useState(primed.moveIdx)
   const [flash, setFlash]     = useState(null)
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
@@ -81,7 +98,14 @@ function DrillCard({ trap, onComplete }) {
       else {
         setTimeout(() => {
           setFlash(null)
-          if (move(trap.moves[next])) { moveIdxRef.current = next+1; setMoveIdx(next+1) }
+          if (move(trap.moves[next])) {
+            const after = next + 1
+            moveIdxRef.current = after
+            setMoveIdx(after)
+            // A drill can end on either side's move (a few traps end on the
+            // opponent's reply, not the "hero" color's move) — check here too.
+            if (after >= trap.moves.length) setTimeout(() => onComplete(mistakesRef.current), 600)
+          }
         }, 500)
       }
     } else {

@@ -192,12 +192,31 @@ function TrapEmpty() {
 }
 
 function TrapStudy({ trap, showToast }) {
+  // Array indices are always White's book moves at even positions regardless
+  // of trap.color — for a black trap, the whole point is drilling BLACK's
+  // winning line, so the drill starts with White's first move already
+  // played rather than making the user input White's move first (which is
+  // what starting at index 0 would otherwise hand them for every black
+  // trap). Computed once via a lazy initializer (same pattern as
+  // browseFens/startPreviewFens below) rather than an effect/render-time ref
+  // mutation, both of which this project's lint config disallows.
+  const [primed] = useState(() => {
+    if (trap.color !== 'black' || trap.moves.length === 0) return { fen: trap.fen, moveIdx: 0 }
+    const c = new Chess(trap.fen)
+    try {
+      c.move(trap.moves[0])
+      return { fen: c.fen(), moveIdx: 1 }
+    } catch {
+      return { fen: trap.fen, moveIdx: 0 }
+    }
+  })
+
   // Chess instance + fen sync live in the hook; move index stays in a ref
   // (not state) to avoid stale closures
-  const { fen, tryMove, undo, move, reset: resetBoard } = useChessBoard(trap.fen)
-  const moveIdxRef = useRef(0)
+  const { fen, tryMove, undo, move, reset: resetBoard } = useChessBoard(primed.fen)
+  const moveIdxRef = useRef(primed.moveIdx)
 
-  const [moveIdx, setMoveIdx]   = useState(0)   // for UI only
+  const [moveIdx, setMoveIdx]   = useState(primed.moveIdx)   // for UI only
   const [mistakes, setMistakes] = useState(0)
   const [complete, setComplete] = useState(false)
   const [flash, setFlash]       = useState(null)
@@ -235,6 +254,21 @@ function TrapStudy({ trap, showToast }) {
   const refreshProgress         = useAppStore(s => s.refreshProgress)
   const mistakesRef             = useRef(0)
 
+  // A drill can end on either side's move (most traps end on the "hero"
+  // color's move, but a few — e.g. budapest-white, petrov-trap — happen to
+  // end on the opponent's reply instead), so completion has to be checked
+  // after BOTH a user move and an auto-played reply, not just the former.
+  const finishDrill = () => {
+    setComplete(true)
+    progressManager.recordTrapStudy(trap.id, mistakesRef.current === 0)
+    progressManager.awardXP(mistakesRef.current === 0 ? 'TRAP_DRILL_PERFECT' : 'TRAP_DRILL_COMPLETE')
+    srsEngine.enroll(trap.id)
+    setInSRS(true)
+    refreshProgress()
+    showToast(mistakesRef.current === 0 ? '🎉 Perfect drill!' : '✅ Drill complete!', mistakesRef.current === 0 ? 'gold' : 'success')
+    setTimeout(() => setFlash(null), 800)
+  }
+
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     console.log('TrapStudy.handleDrop', { from, to, moveIdx: moveIdxRef.current })
     if (complete || browseMode) { console.log('TrapStudy: ignored (complete or browseMode)'); return false }
@@ -258,22 +292,17 @@ function TrapStudy({ trap, showToast }) {
       setMoveIdx(next)
 
       if (next >= trap.moves.length) {
-        setComplete(true)
-        progressManager.recordTrapStudy(trap.id, mistakesRef.current === 0)
-        progressManager.awardXP(mistakesRef.current === 0 ? 'TRAP_DRILL_PERFECT' : 'TRAP_DRILL_COMPLETE')
-        srsEngine.enroll(trap.id)
-        setInSRS(true)
-        refreshProgress()
-        showToast(mistakesRef.current === 0 ? '🎉 Perfect drill!' : '✅ Drill complete!', mistakesRef.current === 0 ? 'gold' : 'success')
-        setTimeout(() => setFlash(null), 800)
+        finishDrill()
       } else {
         // Auto-play opponent move after delay
         setTimeout(() => {
           setFlash(null)
           if (move(trap.moves[next])) {
-            moveIdxRef.current = next + 1
-            setMoveIdx(next + 1)
+            const after = next + 1
+            moveIdxRef.current = after
+            setMoveIdx(after)
             setDrillPreviewIdx(null)
+            if (after >= trap.moves.length) finishDrill()
           }
         }, 500)
       }
@@ -290,10 +319,10 @@ function TrapStudy({ trap, showToast }) {
   }
 
   const reset = () => {
-    resetBoard(trap.fen)
-    moveIdxRef.current = 0
+    resetBoard(primed.fen)
+    moveIdxRef.current = primed.moveIdx
     mistakesRef.current = 0
-    setMoveIdx(0)
+    setMoveIdx(primed.moveIdx)
     setMistakes(0)
     setComplete(false)
     setFlash(null)

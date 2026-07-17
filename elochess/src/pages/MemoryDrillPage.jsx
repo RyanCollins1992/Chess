@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Chess } from 'chess.js'
 import { Chessboard } from '../components/ui/Chessboard'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { TRAPS } from '../data/traps'
@@ -40,9 +41,25 @@ export default function MemoryDrillPage() {
 }
 
 function DrillCard({ trap, index, total, onResult }) {
-  const { fen, tryMove, undo, move } = useChessBoard(trap.fen)
-  const moveIdxRef = useRef(0)
-  const [moveIdx, setMoveIdx]   = useState(0)
+  // Array indices are always White's book moves at even positions regardless
+  // of trap.color — for a black trap, the whole point is testing BLACK's
+  // winning line, so the drill starts with White's first move already
+  // played. Computed once via a lazy initializer, not an effect or
+  // render-time ref mutation (both disallowed by this project's lint rules).
+  const [primed] = useState(() => {
+    if (trap.color !== 'black' || trap.moves.length === 0) return { fen: trap.fen, moveIdx: 0 }
+    const c = new Chess(trap.fen)
+    try {
+      c.move(trap.moves[0])
+      return { fen: c.fen(), moveIdx: 1 }
+    } catch {
+      return { fen: trap.fen, moveIdx: 0 }
+    }
+  })
+
+  const { fen, tryMove, undo, move } = useChessBoard(primed.fen)
+  const moveIdxRef = useRef(primed.moveIdx)
+  const [moveIdx, setMoveIdx]   = useState(primed.moveIdx)
   const [mistakes, setMistakes] = useState(0)
   const [flash, setFlash]       = useState(null)
   const [done, setDone]         = useState(false)
@@ -69,8 +86,15 @@ function DrillCard({ trap, index, total, onResult }) {
         setTimeout(() => {
           setFlash(null)
           if (move(trap.moves[next])) {
-            moveIdxRef.current = next + 1
-            setMoveIdx(next + 1)
+            const after = next + 1
+            moveIdxRef.current = after
+            setMoveIdx(after)
+            // A drill can end on either side's move (a few traps end on the
+            // opponent's reply, not the "hero" color's move) — check here too.
+            if (after >= trap.moves.length) {
+              setDone(true)
+              setTimeout(() => onResult(trap, mistakes === 0, mistakes), 700)
+            }
           }
         }, 400)
       }
