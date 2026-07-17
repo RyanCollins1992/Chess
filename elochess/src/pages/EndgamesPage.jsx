@@ -1,8 +1,15 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
+
+// Bundled NNUE build served same-origin from public/stockfish/ (same engine
+// VsCoachPage/GameReviewPage use — see VsCoachPage.jsx's comment for why a
+// CDN URL can never work here: a classic Worker can't load a cross-origin
+// script, the constructor throws synchronously).
+const ENGINE_JS = 'stockfish/stockfish-18-lite-single.js'
+const HINT_DEPTH = 14 // no strength limiting — a hint should be the real best move, not a weakened one
 
 const SCENARIOS = [
   { id:'kqk', icon:'♛', name:'K+Q vs K', level:'Beginner', desc:'The most basic checkmate.', fen:'8/8/8/4k3/8/8/8/3QK3 w - - 0 1', playerColor:'w', task:'Checkmate the black king', par:10, maxMoves:20, lesson:'Drive the enemy king to the edge using your queen, then checkmate with king support. Key idea: use your king actively!', hints:['Drive the king to the edge first','Use queen to cut off escape squares','Bring your king closer','Avoid stalemate — leave the king one square'] },
@@ -50,9 +57,96 @@ function EndgameBoard({ scenario }) {
   const showToast       = useAppStore(s => s.showToast)
   const refreshProgress = useAppStore(s => s.refreshProgress)
 
+  // Move-hint: a two-stage escalation on top of the existing strategic text
+  // hints. Stage 1 glows the square of the engine's best move for the
+  // *current* position (computed on demand, lazily — most hint clicks in a
+  // session probably won't need this at all, so there's no reason to spin up
+  // Stockfish until it's actually asked for). Stage 2 adds an arrow to the
+  // destination. Capped at 2 — a third click just keeps cycling the existing
+  // text hints, which already has its own cap.
+  const workerRef    = useRef(null) // { worker, ready, resolver }
+  const isMountedRef = useRef(true)
+  const [hintStage, setHintStage]     = useState(0) // 0 none, 1 glow, 2 glow+arrow
+  const [hintMove, setHintMove]       = useState(null) // { from, to } | null
+  const [hintLoading, setHintLoading] = useState(false)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      workerRef.current?.worker.terminate()
+    }
+  }, [])
+
+  // The best move for the position that's now behind us is meaningless — the
+  // visual hint (not the text-hint index/cycling, which is still relevant
+  // strategic guidance for the whole exercise) is cleared at every call site
+  // below that actually changes the position, whichever side moved.
+  const clearVisualHint = () => { setHintStage(0); setHintMove(null) }
+
+  const ensureHintEngine = () => {
+    if (workerRef.current) return Promise.resolve(workerRef.current.ready)
+    return new Promise(resolve => {
+      let worker
+      let handshakeTimer
+      try {
+        worker = new Worker(new URL(ENGINE_JS, document.baseURI).href)
+        worker.onmessage = (e) => {
+          const line = e.data
+          if (line === 'uciok') { worker.postMessage('isready'); return }
+          if (line === 'readyok') {
+            clearTimeout(handshakeTimer)
+            if (isMountedRef.current) workerRef.current = { worker, ready: true, resolver: null }
+            resolve(true)
+            return
+          }
+          if (line.startsWith('bestmove') && workerRef.current?.resolver) {
+            const mv = line.split(' ')[1]
+            workerRef.current.resolver(mv === '(none)' ? null : mv)
+            workerRef.current.resolver = null
+          }
+        }
+        worker.postMessage('uci')
+        handshakeTimer = setTimeout(() => resolve(false), 5000)
+      } catch { resolve(false) }
+    })
+  }
+
+  const getBestMove = (fenNow) => new Promise(resolve => {
+    if (!workerRef.current?.ready) { resolve(null); return }
+    workerRef.current.resolver = resolve
+    workerRef.current.worker.postMessage(`position fen ${fenNow}`)
+    workerRef.current.worker.postMessage(`go depth ${HINT_DEPTH}`)
+  })
+
+  const handleHint = async () => {
+    setShowHint(true)
+    setHintIdx(i => Math.min(i + 1, scenario.hints.length - 1))
+
+    if (hintStage === 1 && hintMove) { setHintStage(2); return }
+    if (hintStage >= 2) return
+
+    setHintLoading(true)
+    const ready = await ensureHintEngine()
+    if (!isMountedRef.current) return
+    if (!ready) {
+      setHintLoading(false)
+      showToast('⚠️ Hint engine unavailable — see the tip above instead', 'error')
+      return
+    }
+    const mv = await getBestMove(chessRef.current.fen())
+    if (!isMountedRef.current) return
+    setHintLoading(false)
+    if (mv) {
+      setHintMove({ from: mv.slice(0, 2), to: mv.slice(2, 4) })
+      setHintStage(1)
+    }
+  }
+
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (complete) return false
     if (!tryMove(from, to)) return false
+    clearVisualHint()
 
     movesRef.current += 1
     const newMoves = movesRef.current
@@ -79,6 +173,7 @@ function EndgameBoard({ scenario }) {
           move({ from: pick.from, to: pick.to, promotion: 'q' })
           movesRef.current += 1
           setMoves(m => m + 1)
+          clearVisualHint()
         }
       }, 500)
     }
@@ -89,6 +184,7 @@ function EndgameBoard({ scenario }) {
     resetBoard(scenario.fen)
     movesRef.current = 0
     setMoves(0); setComplete(false); setFlash(null); setHintIdx(0)
+    clearVisualHint()
   }
 
   return (
@@ -98,7 +194,9 @@ function EndgameBoard({ scenario }) {
           <div className={`rounded-xl overflow-hidden transition-all duration-200 ${flash === 'correct' ? 'ring-2 ring-accent2' : flash === 'wrong' ? 'ring-2 ring-danger' : complete ? 'ring-2 ring-gold' : ''}`}>
             <Chessboard position={fen} onPieceDrop={handleDrop}
               boardOrientation={scenario.playerColor === 'b' ? 'black' : 'white'}
-              arePiecesDraggable={!complete} />
+              arePiecesDraggable={!complete}
+              customSquareStyles={hintStage >= 1 && hintMove ? { [hintMove.from]: { animation: 'hint-glow 1.2s ease-in-out infinite' } } : undefined}
+              arrows={hintStage >= 2 && hintMove ? [{ startSquare: hintMove.from, endSquare: hintMove.to, color: '#22c55e' }] : []} />
           </div>
           <div className="mt-3 flex items-center justify-between text-sm">
             <span className="text-muted">Moves: <span className={moves > scenario.par ? 'text-danger' : 'text-white'}>{moves}</span></span>
@@ -112,7 +210,10 @@ function EndgameBoard({ scenario }) {
         {complete ? <div className="bg-gold/10 border border-gold/30 rounded-xl p-4 text-center"><div className="text-gold font-bold text-lg">🏆 Complete!</div><div className="text-muted text-sm mt-1">{moves <= scenario.par ? `Par! ${moves} moves` : `${moves} moves (par: ${scenario.par})`}</div></div> :
           <div className="bg-bg3 border border-border rounded-xl p-3 text-sm text-muted">🎯 {scenario.task}</div>}
         <div className="space-y-2">
-          <button onClick={() => { setShowHint(!showHint); setHintIdx(i => Math.min(i+1, scenario.hints.length-1)) }} className="w-full btn-ghost text-sm">💡 Hint {hintIdx > 0 ? `(${hintIdx}/${scenario.hints.length})` : ''}</button>
+          <button onClick={handleHint} disabled={hintLoading || complete} className="w-full btn-ghost text-sm disabled:opacity-50">
+            {hintLoading ? '🤔 Thinking…' : hintStage >= 2 ? '💡 Hint' : hintStage === 1 ? '💡 Show the move' : '💡 Show the piece'}
+            {hintIdx > 0 ? ` (${hintIdx}/${scenario.hints.length})` : ''}
+          </button>
           {showHint && <div className="bg-gold/10 border border-gold/30 rounded-lg p-3 text-sm text-muted">{scenario.hints[hintIdx] || scenario.hints[0]}</div>}
           <button onClick={reset} className="w-full btn-ghost text-sm">↺ Restart</button>
         </div>
