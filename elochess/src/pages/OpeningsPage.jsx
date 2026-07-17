@@ -359,7 +359,13 @@ function TrapStudy({ trap, showToast }) {
   }
   const toggleBrowse = () => {
     setBrowseMode(b => !b)
-    setBrowseIdx(moveIdx)
+    // Always start Browse mode from the beginning of the line rather than
+    // wherever the live drill currently sits — Browse exists to review the
+    // whole trap, and seeding from moveIdx meant finishing a drill (or
+    // switching mid-drill) dropped you on the last move instead of the
+    // first. browseIdx isn't read in Drill mode, so resetting it
+    // unconditionally here is safe in both toggle directions.
+    setBrowseIdx(0)
     setDrillPreviewIdx(null)
   }
 
