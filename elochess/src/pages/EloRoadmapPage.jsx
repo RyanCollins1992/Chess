@@ -7,8 +7,6 @@ const ROADMAP = [
   {
     range: '0–400',
     title: 'Complete Beginner',
-    color: 'border-gray-600 bg-gray-900/30',
-    badge: 'text-gray-400',
     icon: '🐣',
     focus: 'Learn the rules and basic checkmates',
     goals: [
@@ -24,8 +22,6 @@ const ROADMAP = [
   {
     range: '400–700',
     title: 'Beginner',
-    color: 'border-green-700 bg-green-900/20',
-    badge: 'text-green-400',
     icon: '🌱',
     focus: 'Stop blundering, learn basic tactics',
     goals: [
@@ -41,8 +37,6 @@ const ROADMAP = [
   {
     range: '700–1000',
     title: 'Intermediate Beginner',
-    color: 'border-blue-700 bg-blue-900/20',
-    badge: 'text-blue-400',
     icon: '📘',
     focus: 'Learn opening principles and tactics patterns',
     goals: [
@@ -58,8 +52,6 @@ const ROADMAP = [
   {
     range: '1000–1200',
     title: 'Club Player',
-    color: 'border-yellow-600 bg-yellow-900/20',
-    badge: 'text-yellow-400',
     icon: '♟',
     focus: 'Deepen opening repertoire, improve calculation',
     goals: [
@@ -75,8 +67,6 @@ const ROADMAP = [
   {
     range: '1200–1500',
     title: 'Intermediate',
-    color: 'border-orange-600 bg-orange-900/20',
-    badge: 'text-orange-400',
     icon: '🏆',
     focus: 'Strategic play, positional understanding',
     goals: [
@@ -92,8 +82,6 @@ const ROADMAP = [
   {
     range: '1500+',
     title: 'Advanced',
-    color: 'border-red-600 bg-red-900/20',
-    badge: 'text-red-400',
     icon: '👑',
     focus: 'Deep calculation, mastering complex endgames',
     goals: [
@@ -108,29 +96,14 @@ const ROADMAP = [
   },
 ]
 
-// Tempo-mode recolor of the same 6-tier progression — the design doc calls
-// for the tiers to stay static/non-theme-reactive (as already decided; see
-// the `gray`/`green`/etc. comment in tailwind.config.js) but to run through
-// Sage → Ochre → Oxblood → Brass instead of Tailwind's stock palette. Four
-// colors across six tiers, paired two tiers per color.
-const TEMPO_TIER_STYLES = [
-  { color: 'border-[#8CB088]/50 bg-[#8CB088]/10', badge: 'text-[#8CB088]' }, // sage
-  { color: 'border-[#8CB088]/50 bg-[#8CB088]/10', badge: 'text-[#8CB088]' }, // sage
-  { color: 'border-[#D9A24B]/50 bg-[#D9A24B]/10', badge: 'text-[#D9A24B]' }, // ochre
-  { color: 'border-[#D9A24B]/50 bg-[#D9A24B]/10', badge: 'text-[#D9A24B]' }, // ochre
-  { color: 'border-[#C9636F]/50 bg-[#C9636F]/10', badge: 'text-[#C9636F]' }, // oxblood
-  { color: 'border-[#B08D5A]/50 bg-[#B08D5A]/10', badge: 'text-[#B08D5A]' }, // brass
-]
-
-// Ply's "spend your boldness in one place" brief doesn't fit a 4-color tier
-// rainbow — every tier gets the same quiet neutral card, and the current
-// tier is singled out by its accent-colored sweep-frame ring alone (below),
-// not by any per-tier hue.
-const PLY_TIER_STYLE = { color: 'border-border bg-bg3', badge: 'text-muted' }
+// Every tier gets the same quiet neutral card — matching the KnightPath
+// reference design's own roadmap screen, which uses one neutral style plus
+// a small status dot rather than a per-tier color rainbow. The current tier
+// is singled out by its accent-colored sweep-frame ring alone (below).
+const TIER_STYLE = { color: 'border-border bg-bg3', badge: 'text-muted' }
 
 export default function EloRoadmapPage() {
   const navigate  = useAppStore(s => s.navigate)
-  const visualMode = useAppStore(s => s.settings.visualMode) || 'tempo'
   const currentElo = progressManager.currentElo
   const [expanded, setExpanded] = useState(null)
 
@@ -167,9 +140,9 @@ export default function EloRoadmapPage() {
           const isCurrent = i === currentStage
           const isDone    = i < currentStage
           const isOpen    = expanded === i || isCurrent
-          const tierStyle = visualMode === 'tempo' ? TEMPO_TIER_STYLES[i] : visualMode === 'ply' ? PLY_TIER_STYLE : stage
+          const tierStyle = TIER_STYLE
 
-          const sweeps = isCurrent && (visualMode === 'tempo' || visualMode === 'ply')
+          const sweeps = isCurrent
 
           const card = (
             <div

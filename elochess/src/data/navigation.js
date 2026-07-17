@@ -13,6 +13,8 @@
  * "Progress") because it's a time-sensitive due-queue, not a passive stat.
  */
 export const NAV = [
+  { id: 'dashboard',     label: 'Dashboard',      icon: '◫', },
+
   { section: 'OPENING TRAPS' },
   { id: 'spaced-review', label: 'Spaced Review',  icon: '↻', badge: true },
   { id: 'openings',      label: 'Openings',       icon: '♟',  },

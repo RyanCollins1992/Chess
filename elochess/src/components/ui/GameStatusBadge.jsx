@@ -1,5 +1,4 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { useAppStore } from '../../store/useAppStore'
 import { DURATION, EASE_SETTLE } from '../../styles/motion'
 
 const TONE_CLASSES = {
@@ -10,18 +9,16 @@ const TONE_CLASSES = {
 
 /**
  * The inline win/check/turn indicator shared by FreePlayPage and
- * VsCoachPage. In Tempo/Ply mode, transitioning into tone="over" plays the
- * design doc's "reveal" (420ms) game-complete beat — the app's only
- * "game complete" UI today is this badge, not a modal (see project
- * memory), so reveal is scoped to this rather than a component that
- * doesn't exist yet.
+ * VsCoachPage. Transitioning into tone="over" plays a "reveal" (420ms)
+ * game-complete beat — the app's only "game complete" UI today is this
+ * badge, not a modal (see project memory), so reveal is scoped to this
+ * rather than a component that doesn't exist yet.
  */
 export default function GameStatusBadge({ text, tone }) {
-  const visualMode = useAppStore(s => s.settings.visualMode) || 'tempo'
   const reduceMotion = useReducedMotion()
   const className = `rounded-xl px-3 py-2 text-sm font-medium text-center ${TONE_CLASSES[tone]}`
 
-  if ((visualMode !== 'tempo' && visualMode !== 'ply') || tone !== 'over' || reduceMotion) {
+  if (tone !== 'over' || reduceMotion) {
     return <div className={className}>{text}</div>
   }
 

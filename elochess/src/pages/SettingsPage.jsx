@@ -2,15 +2,10 @@ import { useState, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
-import { THEMES, DEFAULT_THEME_ID } from '../styles/themes'
-import { PIECE_STYLES, DEFAULT_PIECE_STYLE_ID } from '../styles/pieceStyles'
-import { TEMPO_THEME } from '../styles/tempo'
-import { PLY_THEME } from '../styles/ply'
 
 export default function SettingsPage() {
   const { settings, updateSettings, showToast, refreshProgress } = useAppStore()
   const [elo, setElo] = useState(progressManager.currentElo)
-  const visualMode = settings.visualMode || 'tempo'
 
   const save = (key, value) => {
     updateSettings({ [key]: value })
@@ -68,88 +63,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </Section>
-
-      {/* Visual mode */}
-      <Section title="✦ Visual Mode">
-        <div className="flex gap-2">
-          <button
-            onClick={() => save('visualMode', 'medieval')}
-            className={`flex-1 text-left p-2.5 rounded-lg border transition-colors ${
-              visualMode === 'medieval' ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
-            }`}
-          >
-            <div className={`text-xs font-bold ${visualMode === 'medieval' ? 'text-gold' : 'text-white'}`}>Medieval</div>
-            <div className="text-[11px] text-muted mt-0.5">The 8 themes below, plus switchable piece art.</div>
-          </button>
-          <button
-            onClick={() => save('visualMode', 'tempo')}
-            className={`flex-1 text-left p-2.5 rounded-lg border transition-colors ${
-              visualMode === 'tempo' ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
-            }`}
-          >
-            <div className={`text-xs font-bold ${visualMode === 'tempo' ? 'text-gold' : 'text-white'}`}>Tempo</div>
-            <div className="text-[11px] text-muted mt-0.5">{TEMPO_THEME.description}</div>
-          </button>
-          <button
-            onClick={() => save('visualMode', 'ply')}
-            className={`flex-1 text-left p-2.5 rounded-lg border transition-colors ${
-              visualMode === 'ply' ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
-            }`}
-          >
-            <div className={`text-xs font-bold ${visualMode === 'ply' ? 'text-gold' : 'text-white'}`}>Ply</div>
-            <div className="text-[11px] text-muted mt-0.5">{PLY_THEME.description}</div>
-          </button>
-        </div>
-      </Section>
-
-      {/* Theme — only meaningful in Medieval mode */}
-      {visualMode === 'medieval' && <Section title="🎨 Theme">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {THEMES.map(theme => {
-            const active = (settings.theme || DEFAULT_THEME_ID) === theme.id
-            return (
-              <button
-                key={theme.id}
-                onClick={() => save('theme', theme.id)}
-                title={theme.description}
-                className={`text-left p-2.5 rounded-lg border transition-colors ${
-                  active ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
-                }`}
-              >
-                <div className="flex gap-1 mb-1.5">
-                  {[theme.colors.bg, theme.colors.gold, theme.colors.accent, theme.colors.accent2].map((c, i) => (
-                    <span key={i} className="w-3.5 h-3.5 rounded-full border border-border/50" style={{ backgroundColor: c }} />
-                  ))}
-                </div>
-                <div className={`text-xs font-bold ${active ? 'text-gold' : 'text-white'}`}>{theme.name}</div>
-              </button>
-            )
-          })}
-        </div>
-      </Section>}
-
-      {/* Piece Style — only meaningful in Medieval mode; Tempo and Ply always
-          use their own typographic glyph sets (see Chessboard.jsx). */}
-      {visualMode === 'medieval' && <Section title="♞ Piece Style">
-        <div className="grid grid-cols-2 gap-2">
-          {PIECE_STYLES.map(style => {
-            const active = (settings.pieceStyle || DEFAULT_PIECE_STYLE_ID) === style.id
-            return (
-              <button
-                key={style.id}
-                onClick={() => save('pieceStyle', style.id)}
-                title={style.description}
-                className={`text-left p-2.5 rounded-lg border transition-colors ${
-                  active ? 'border-gold bg-gold/10' : 'border-border bg-bg3 hover:border-border/80'
-                }`}
-              >
-                <div className={`text-xs font-bold ${active ? 'text-gold' : 'text-white'}`}>{style.name}</div>
-                <div className="text-[11px] text-muted mt-0.5">{style.description}</div>
-              </button>
-            )
-          })}
-        </div>
-      </Section>}
 
       {/* Board */}
       <Section title="♟ Board">
@@ -211,29 +124,17 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* Stats — a bento grid in Tempo/Ply (streak gets visual weight instead
-          of every stat being treated equally), unchanged uniform grid in
-          medieval (design review, concept 03). */}
+      {/* Stats — a bento grid (streak gets visual weight instead of every
+          stat being treated equally). */}
       <Section title="📊 Your Stats">
-        {(visualMode === 'tempo' || visualMode === 'ply') ? (
-          <div className="grid grid-cols-4 gap-2" style={{ gridAutoRows: '76px' }}>
-            <BentoTile className="col-span-2 row-span-2" label="Day streak" value={progressManager.streak} sub="days" big />
-            <BentoTile className="col-span-2" label="Total XP" value={progressManager.xpTotal} />
-            <BentoTile label="Level" value={progressManager.level} />
-            <BentoTile label="SRS cards" value={srsEngine.getStats().total} />
-            <BentoTile label="Mastered" value={srsEngine.getStats().mastered} tone="sage" />
-            <BentoTile label="Drills" value={progressManager.totalDrills} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <StatRow label="Total XP" value={progressManager.xpTotal} />
-            <StatRow label="Current Level" value={progressManager.level} />
-            <StatRow label="Day Streak" value={`${progressManager.streak} days`} />
-            <StatRow label="SRS Cards" value={srsEngine.getStats().total} />
-            <StatRow label="Cards Mastered" value={srsEngine.getStats().mastered} />
-            <StatRow label="Total Drills" value={progressManager.totalDrills} />
-          </div>
-        )}
+        <div className="grid grid-cols-4 gap-2" style={{ gridAutoRows: '76px' }}>
+          <BentoTile className="col-span-2 row-span-2" label="Day streak" value={progressManager.streak} sub="days" big />
+          <BentoTile className="col-span-2" label="Total XP" value={progressManager.xpTotal} />
+          <BentoTile label="Level" value={progressManager.level} />
+          <BentoTile label="SRS cards" value={srsEngine.getStats().total} />
+          <BentoTile label="Mastered" value={srsEngine.getStats().mastered} tone="sage" />
+          <BentoTile label="Drills" value={progressManager.totalDrills} />
+        </div>
       </Section>
 
       {/* Licenses & Credits */}
@@ -246,15 +147,6 @@ export default function SettingsPage() {
               <a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">source</a>),
               licensed under the{' '}
               <a href="https://www.gnu.org/licenses/gpl-3.0.txt" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">GNU GPL v3</a>.
-            </p>
-          </div>
-          <div>
-            <div className="font-medium text-white mb-1">Chess Pieces</div>
-            <p className="text-muted">
-              Piece artwork is the{' '}
-              <a href="https://github.com/maurimo/chess-art" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">"Fantasy" set</a>{' '}
-              by Maurizio Monge, licensed under the{' '}
-              <a href="https://github.com/maurimo/chess-art/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">MIT License</a>.
             </p>
           </div>
           <div>
@@ -327,10 +219,8 @@ function ToggleRow({ label, desc, value, onChange }) {
 }
 
 // Irreversible actions ("Reset All Progress") require a 600ms press-and-hold
-// with a filling ring instead of a tap-then-confirm dialog — per the Tempo
-// design doc's "Premium interactions" brief (fewer clicks, and physically
-// harder to trigger by accident than a second tap). Interaction model, not
-// just visual polish, so it applies in both visual modes.
+// with a filling ring instead of a tap-then-confirm dialog — fewer clicks,
+// and physically harder to trigger by accident than a second tap.
 function HoldButton({ onComplete, holdMs = 600, className = '', children }) {
   const [holding, setHolding] = useState(false)
   const timerRef = useRef(null)
@@ -366,15 +256,6 @@ function HoldButton({ onComplete, holdMs = 600, className = '', children }) {
       />
       <span className="relative">{children}</span>
     </button>
-  )
-}
-
-function StatRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between bg-bg3 rounded-lg px-3 py-2 border border-border">
-      <span className="text-muted">{label}</span>
-      <span className="font-bold text-white">{value}</span>
-    </div>
   )
 }
 

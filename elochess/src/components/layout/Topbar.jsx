@@ -1,31 +1,32 @@
 import { useAppStore } from '../../store/useAppStore'
+import { Menu, Search, Plus, Settings as SettingsIcon, Zap } from 'lucide-react'
+import { KNIGHTPATH_NAV_ICONS } from '../../styles/knightpathIcons'
 
-// Kept in sync with Sidebar.jsx's NAV icons (plain-text Unicode symbols, not
-// color emoji, so they inherit the active theme's colors — see the comment
-// there for why the original emoji icons had to go).
 const PAGE_TITLES = {
-  'openings':       { icon: '♟', title: 'Openings' },
-  'spaced-review':  { icon: '↻', title: 'Spaced Review' },
-  'progress':       { icon: '✦', title: 'My Progress' },
-  'import-games':   { icon: '✉', title: 'Import Games' },
-  'game-review':    { icon: '♜', title: 'Game Review' },
-  'elo-roadmap':    { icon: '⚑', title: 'ELO Roadmap' },
-  'favourites':     { icon: '✧', title: 'Favourites' },
-  'vs-coach':       { icon: '⚔', title: 'vs. Coach' },
-  'free-play':      { icon: '♞', title: 'Free Play' },
-  'puzzles':        { icon: '✥', title: 'Puzzles' },
-  'memory-drill':   { icon: '✎', title: 'Memory Drill' },
-  'opening-quiz':   { icon: '✒', title: 'Opening Quiz' },
-  'mate-patterns':  { icon: '♚', title: 'Mate Patterns' },
-  'endgames':       { icon: '♔', title: 'Endgame Trainer' },
-  'piece-values':   { icon: '⚖', title: 'Piece Values' },
-  'rate-difficulty':{ icon: '◆', title: 'Rate Difficulty' },
-  'settings':       { icon: '⚙', title: 'Settings' },
+  'dashboard':      'Dashboard',
+  'openings':       'Openings',
+  'spaced-review':  'Spaced Review',
+  'progress':       'My Progress',
+  'import-games':   'Import Games',
+  'game-review':    'Game Review',
+  'elo-roadmap':    'ELO Roadmap',
+  'favourites':     'Favourites',
+  'vs-coach':       'vs. Coach',
+  'free-play':      'Free Play',
+  'puzzles':        'Puzzles',
+  'memory-drill':   'Memory Drill',
+  'opening-quiz':   'Opening Quiz',
+  'mate-patterns':  'Mate Patterns',
+  'endgames':       'Endgame Trainer',
+  'piece-values':   'Piece Values',
+  'rate-difficulty':'Rate Difficulty',
+  'settings':       'Settings',
 }
 
 export default function Topbar({ onCoachClick, onPaletteClick }) {
   const { currentPage, toggleSidebar, progress, navigate } = useAppStore()
-  const page = PAGE_TITLES[currentPage] || { icon: '♟', title: 'EloChess' }
+  const title = PAGE_TITLES[currentPage] || 'EloChess'
+  const PageIcon = KNIGHTPATH_NAV_ICONS[currentPage]
 
   return (
     <header className="h-14 shrink-0 bg-bg2 border-b border-border flex items-center px-4 gap-3 z-20">
@@ -35,15 +36,13 @@ export default function Topbar({ onCoachClick, onPaletteClick }) {
         className="lg:hidden text-muted hover:text-white transition-colors p-1"
         aria-label="Open menu"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
+        <Menu size={20} />
       </button>
 
       {/* Page title */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <span className="text-lg">{page.icon}</span>
-        <h1 className="font-bold text-white text-base truncate font-heading">{page.title}</h1>
+        {PageIcon && <PageIcon size={18} />}
+        <h1 className="font-bold text-white text-base truncate font-heading">{title}</h1>
       </div>
 
       {/* Right side */}
@@ -56,7 +55,7 @@ export default function Topbar({ onCoachClick, onPaletteClick }) {
 
         {/* XP */}
         <div className="hidden sm:flex items-center gap-1 text-gold">
-          <span className="text-base">✵</span>
+          <Zap size={16} />
           <span className="font-bold text-sm">{progress.xpToday}</span>
         </div>
 
@@ -66,6 +65,7 @@ export default function Topbar({ onCoachClick, onPaletteClick }) {
           className="hidden sm:flex items-center gap-2 text-muted hover:text-white transition-colors bg-bg3 border border-border rounded-lg px-2.5 py-1.5 text-xs"
           aria-label="Search (Cmd+K)"
         >
+          <Search size={13} />
           <span>Search…</span>
           <kbd className="font-mono text-[10px] bg-bg border border-border rounded px-1">⌘K</kbd>
         </button>
@@ -75,7 +75,7 @@ export default function Topbar({ onCoachClick, onPaletteClick }) {
           onClick={onCoachClick}
           className="flex items-center gap-1.5 bg-gold text-bg font-bold px-3 py-1.5 rounded-lg hover:bg-gold2 transition-colors text-sm active:scale-95"
         >
-          <span>+</span>
+          <Plus size={14} />
           <span>Coach</span>
         </button>
 
@@ -85,7 +85,7 @@ export default function Topbar({ onCoachClick, onPaletteClick }) {
           className="text-muted hover:text-white transition-colors p-1.5"
           aria-label="Settings"
         >
-          <span className="text-lg">⚙</span>
+          <SettingsIcon size={18} />
         </button>
       </div>
     </header>

@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import AppLayout from './components/layout/AppLayout'
 import { useAppStore } from './store/useAppStore'
 import { pageTransition, pageTransitionReduced } from './styles/motion'
+import DashboardPage      from './pages/DashboardPage'
 import OpeningsPage       from './pages/OpeningsPage'
 import SpacedReviewPage   from './pages/SpacedReviewPage'
 import ProgressPage       from './pages/ProgressPage'
@@ -22,6 +23,7 @@ import GameReviewPage     from './pages/GameReviewPage'
 import LearnOpeningsPage  from './pages/LearnOpeningsPage'
 
 const PAGES = {
+  'dashboard':       <DashboardPage />,
   'openings':        <OpeningsPage />,
   'spaced-review':   <SpacedReviewPage />,
   'progress':        <ProgressPage />,
@@ -44,17 +46,8 @@ const PAGES = {
 
 export default function App() {
   const currentPage = useAppStore(s => s.currentPage)
-  const visualMode  = useAppStore(s => s.settings.visualMode) || 'tempo'
   const reduceMotion = useReducedMotion()
   const page = PAGES[currentPage] || <div className="flex items-center justify-center h-full text-muted">Page not found</div>
-
-  // Page-transition motion is Tempo/Ply-only, matching how the design doc's
-  // other Tempo-specific decisions (radius, heading tracking) are additive
-  // rather than changing the 8 medieval themes' existing instant page swap.
-  // Ply's own "elegant animations, 150-200ms" brief wants the same beat.
-  if (visualMode !== 'tempo' && visualMode !== 'ply') {
-    return <AppLayout>{page}</AppLayout>
-  }
 
   return (
     <AppLayout>

@@ -5,7 +5,7 @@ import AICoachPanel from '../ui/AICoachPanel'
 import Toast from '../ui/Toast'
 import CommandPalette from '../ui/CommandPalette'
 import { useAppStore } from '../../store/useAppStore'
-import { getActiveTheme, DEFAULT_THEME_ID } from '../../styles/themes'
+import { KNIGHTPATH_THEME } from '../../styles/knightpath'
 
 // Tailwind's opacity modifiers (bg-gold/10, text-danger/30, ...) need the
 // underlying CSS variable to be an "R G B" triplet it can drop into
@@ -25,27 +25,30 @@ export default function AppLayout({ children }) {
   const [coachOpen, setCoachOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const toast = useAppStore(s => s.toast)
-  const themeId = useAppStore(s => s.settings.theme) || DEFAULT_THEME_ID
-  const visualMode = useAppStore(s => s.settings.visualMode) || 'tempo'
 
-  // Applies the active theme's CSS variables to the document root. Runs on
-  // every theme (or visual-mode) change, not just mount, so switching in
-  // Settings retints the whole app immediately — no rebuild, no reload.
-  // Tempo/Ply aren't among the 8 medieval THEMES entries — separate modes
-  // that reuse the same --color-*/--font-heading application mechanism,
-  // plus their own --font-body override (see styles/tempo.js, styles/ply.js).
+  // Applies KnightPath's CSS variables to the document root once on mount.
+  // This app only has one visual identity now, so there's nothing to switch
+  // between — kept as a runtime effect (rather than inlining every value as
+  // static CSS) only because dozens of components already read these via
+  // var(--color-x) / Tailwind's bg-x utilities; rewriting all of those to
+  // hardcoded values would be a much larger, riskier change than dropping
+  // the now-unused multi-theme resolution this used to do.
   useEffect(() => {
-    const theme = getActiveTheme(visualMode, themeId)
+    const theme = KNIGHTPATH_THEME
     const root = document.documentElement
     for (const [key, value] of Object.entries(theme.colors)) {
       root.style.setProperty(`--color-${key}`, value)
       root.style.setProperty(`--color-${key}-rgb`, hexToRgbTriplet(value))
     }
     root.style.setProperty('--font-heading', theme.headingFont)
-    root.style.setProperty('--font-body', theme.bodyFont || "'EB Garamond', Georgia, serif")
-    root.dataset.theme = theme.id
-    root.dataset.visualMode = visualMode
-  }, [themeId, visualMode])
+    root.style.setProperty('--font-body', theme.bodyFont)
+    // KnightPath's sidebar is dark navy while its content-area bg2 is white —
+    // a two-tone layout (see styles/knightpath.js).
+    root.style.setProperty('--color-sidebar-bg', theme.sidebarBg)
+    root.style.setProperty('--color-sidebar-border', theme.sidebarBorder)
+    root.style.setProperty('--color-sidebar-text', theme.sidebarText)
+    root.style.setProperty('--color-sidebar-muted', theme.sidebarMuted)
+  }, [])
 
   // Global Cmd/Ctrl+K to open the command palette from anywhere in the app.
   useEffect(() => {

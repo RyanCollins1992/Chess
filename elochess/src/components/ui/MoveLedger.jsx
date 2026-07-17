@@ -2,10 +2,9 @@
  * Shared move-list component — a ruled, numbered White|Black ledger, the
  * same shape a paper tournament scoresheet already has. Extracted from the
  * near-identical markup that used to be duplicated in FreePlayPage.jsx and
- * VsCoachPage.jsx (see Tempo design-brief conversation, 2026-07-07).
+ * VsCoachPage.jsx.
  *
- * Theme-reactive through the existing --color-* tokens (works in both the
- * 8 medieval themes and Tempo mode) — not gated by visualMode itself.
+ * Theme-reactive through the existing --color-* tokens.
  */
 export default function MoveLedger({ moveList, className = '', activeIdx, onMoveClick }) {
   if (!moveList || moveList.length === 0) {
