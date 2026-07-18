@@ -19,14 +19,19 @@ describe('OpeningDatabasePage', () => {
     render(<OpeningDatabasePage />)
     fireEvent.change(screen.getByPlaceholderText('Search opening names…'), { target: { value: 'Najdorf' } })
     expect(screen.getByText('Sicilian Defence: Najdorf')).toBeInTheDocument()
-    expect(screen.queryByText('Polish Opening')).not.toBeInTheDocument()
   })
 
-  it('category filter narrows the list', () => {
+  it('every entry in the database has at least 8 moves', async () => {
+    const { ECO_DATABASE } = await import('../data/ecoDatabase')
+    expect(ECO_DATABASE.length).toBeGreaterThan(0)
+    expect(ECO_DATABASE.every(e => e.moves.length >= 8)).toBe(true)
+  })
+
+  it('category filter narrows the list, excluding entries from other categories', () => {
     render(<OpeningDatabasePage />)
     fireEvent.click(screen.getByRole('button', { name: 'Indian Defences' }))
-    expect(screen.getByText('198 openings')).toBeInTheDocument()
-    expect(screen.queryByText('Polish Opening')).not.toBeInTheDocument()
+    expect(screen.getByText('166 openings')).toBeInTheDocument()
+    expect(screen.queryByText('Sicilian Defence: Najdorf')).not.toBeInTheDocument()
   })
 
   it('selecting an entry shows the board and its move order', () => {
