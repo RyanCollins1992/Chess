@@ -8,8 +8,6 @@
 export const PIECE_STYLES = [
   { id: 'classic', name: 'Classic', description: 'Plain glyphs — KnightPath’s default look.' },
   { id: 'fantasy', name: 'Fantasy', description: 'Ornate ivory/ebony carved-line artwork.' },
-  { id: 'heraldic', name: 'Heraldic', description: 'Illustrated crests — crowned royalty, a castle-turret rook.' },
-  { id: 'medallion', name: 'Medallion', description: 'The Heraldic set in gold and pewter coin badges.' },
 ]
 
 export const DEFAULT_PIECE_STYLE_ID = 'classic'

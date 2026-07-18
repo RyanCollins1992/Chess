@@ -82,76 +82,9 @@ const FANTASY_PIECES = Object.fromEntries(
   }))
 )
 
-// "Heraldic" piece set: illustrated crests (crowned king/queen faces, a
-// castle-turret rook, a horse-head knight) extracted directly from a user
-// reference image (not a third-party licensed set).
-//
-// Each cropped PNG is tightly bound to that piece's own artwork (no shared
-// row-level canvas), so a single size per type — relative to the tallest
-// piece (king) — preserves the set's natural size hierarchy instead of
-// every piece independently maxing out to the same rendered size. Sized by
-// WIDTH percentage (not height): height:X% would compute against the
-// image's own unscaled intrinsic height instead of the square, overflowing
-// past it. Width against the slot's (always definite) width is reliable;
-// height is left to 'auto' and follows the image's own aspect ratio.
-const HERALDIC_WIDTH_PCT = { P: 52, R: 57, N: 60, B: 54, Q: 55, K: 59 }
-const HERALDIC_PIECES = Object.fromEntries(
-  ['P', 'R', 'N', 'B', 'Q', 'K'].flatMap(type => ['w', 'b'].map(color => {
-    const code = color + type
-    return [code, () => (
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-        <img
-          src={`/pieces/heraldic/${code}.png`}
-          alt=""
-          draggable={false}
-          style={{ width: `${HERALDIC_WIDTH_PCT[type]}%`, height: 'auto', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.5))', pointerEvents: 'none' }}
-        />
-      </div>
-    )]
-  }))
-)
-
-// "Medallion" piece style: the Heraldic artwork above, wrapped in a circular
-// beveled coin badge (gold for white, pewter for black) via CSS gradients.
-const MEDALLION_COIN_STYLE = {
-  w: {
-    background: 'radial-gradient(circle at 35% 30%, #f0dba0, #c9a227 55%, #8a6d1f 100%)',
-    border: '2px solid #6b5220',
-  },
-  b: {
-    background: 'radial-gradient(circle at 35% 30%, #9aa0aa, #5c6167 55%, #2a2d31 100%)',
-    border: '2px solid #1a1c1e',
-  },
-}
-const MEDALLION_PIECES = Object.fromEntries(
-  ['P', 'R', 'N', 'B', 'Q', 'K'].flatMap(type => ['w', 'b'].map(color => {
-    const code = color + type
-    return [code, () => (
-      <div
-        style={{
-          position: 'absolute', inset: '4%', borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -2px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.5)',
-          pointerEvents: 'none',
-          ...MEDALLION_COIN_STYLE[color],
-        }}
-      >
-        <img
-          src={`/pieces/heraldic/${code}.png`}
-          alt=""
-          draggable={false}
-          style={{ maxWidth: '74%', maxHeight: '74%', objectFit: 'contain', pointerEvents: 'none' }}
-        />
-      </div>
-    )]
-  }))
-)
-
 const PIECE_SETS = {
   classic: CLASSIC_PIECES,
   fantasy: FANTASY_PIECES,
-  heraldic: HERALDIC_PIECES,
-  medallion: MEDALLION_PIECES,
 }
 
 function findKingSquare(board, color) {
