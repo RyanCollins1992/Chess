@@ -4,12 +4,11 @@ import { EvalBar } from '../components/ui/EvalBar'
 import { Chess } from 'chess.js'
 import { useAppStore } from '../store/useAppStore'
 import { readThemeColor } from '../core/themeColor'
+import { ReviewEngine } from '../core/ReviewEngine'
 import {
   CLASSIFICATIONS,
   classifyMove,
   START_FEN,
-  clampEval,
-  encodeMateScore,
   isMateScore,
   mateDistance,
   moveAccuracy,
@@ -20,97 +19,12 @@ import {
   parsePGN,
 } from '../core/GameAnalysis'
 
-// ── Stockfish worker ──────────────────────────────────────────────
-// Bundled NNUE build (single-threaded "lite") — ships inside the app so
-// analysis works offline and nothing fetches/executes remote code.
-// Bare filename — the build auto-detects worker context and resolves its own
-// .wasm by replacing the .js suffix on its own URL, no query/hash needed.
-const ENGINE_JS = 'stockfish/stockfish-18-lite-single.js'
-const STOP_AFTER_MS = 2500 // safety net: never block more than this per position
 // Each ReviewEngine is a fully independent Worker (single-threaded WASM), so a
 // pool of them can evaluate different positions concurrently — evaluating a
 // position never depends on any other position's result, only the later
 // move-classification pass does. Capped at 4: beyond that, contention on a
 // typical machine's cores stops paying off and just fights the UI thread.
 const ENGINE_POOL_SIZE = Math.max(1, Math.min(4, (typeof navigator !== 'undefined' ? navigator.hardwareConcurrency : 4) || 4))
-
-class ReviewEngine {
-  constructor() {
-    this._worker  = null
-    this._ready   = false
-    this._queue   = []
-  }
-
-  async init() {
-    return new Promise(resolve => {
-      // Bail out after 15 s if the engine never responds
-      const timeout = setTimeout(() => resolve(false), 15000)
-      const done = (ok) => { clearTimeout(timeout); resolve(ok) }
-
-      try {
-        const url = new URL(ENGINE_JS, document.baseURI).href
-        this._worker = new Worker(url)
-
-        this._worker.onmessage = (e) => {
-          const line = e.data
-          if (line === 'uciok')   { this._worker.postMessage('setoption name MultiPV value 2'); this._worker.postMessage('isready'); return }
-          if (line === 'readyok') { this._ready = true; done(true); return }
-          if (this._currentResolve) {
-            if (line.startsWith('info') && line.includes(' score ')) {
-              const pvMatch   = line.match(/\bmultipv (\d+)/)
-              const pvIndex   = pvMatch ? parseInt(pvMatch[1]) : 1
-              const cpMatch   = line.match(/score cp (-?\d+)/)
-              const mateMatch = line.match(/score mate (-?\d+)/)
-              const moveMatch = line.match(/\bpv (\S+)/)
-              let cp = null
-              // Mate encoded as sign * (10000 - distance) — see GameAnalysis.js
-              if (mateMatch) { cp = encodeMateScore(parseInt(mateMatch[1])) }
-              else if (cpMatch) { cp = clampEval(parseInt(cpMatch[1])) }
-              if (cp !== null) {
-                if (pvIndex === 1) { this._eval1 = cp; if (moveMatch) this._move1 = moveMatch[1] }
-                else if (pvIndex === 2) { this._eval2 = cp; if (moveMatch) this._move2 = moveMatch[1] }
-              }
-            }
-            if (line.startsWith('bestmove')) {
-              clearTimeout(this._stopTimer)
-              const parts = line.split(' ')
-              this._currentResolve({
-                eval: this._eval1 ?? 0,
-                bestMove: parts[1] !== '(none)' ? parts[1] : null,
-                eval2: this._eval2 ?? null,
-                secondMove: this._move2 ?? null,
-              })
-              this._currentResolve = null
-              this._processQueue()
-            }
-          }
-        }
-        this._worker.onerror = () => done(false)
-        this._worker.postMessage('uci')
-      } catch { done(false) }
-    })
-  }
-
-  evaluate(fen, depth = 20) {
-    return new Promise(resolve => {
-      this._queue.push({ fen, depth, resolve })
-      if (!this._currentResolve) this._processQueue()
-    })
-  }
-
-  _processQueue() {
-    if (this._queue.length === 0) return
-    const { fen, depth, resolve } = this._queue.shift()
-    this._currentResolve = resolve
-    this._eval1 = 0; this._move1 = null
-    this._eval2 = null; this._move2 = null
-    this._worker.postMessage(`position fen ${fen}`)
-    this._worker.postMessage(`go depth ${depth}`)
-    this._stopTimer = setTimeout(() => this._worker.postMessage('stop'), STOP_AFTER_MS)
-  }
-
-  terminate() { this._worker?.terminate() }
-}
 
 // ── Main component ────────────────────────────────────────────────
 export default function GameReviewPage() {

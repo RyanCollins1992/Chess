@@ -62,8 +62,13 @@ export class LiveEvalEngine {
               else if (cpMatch) cp = clampEval(parseInt(cpMatch[1]))
 
               if (cp !== null) {
-                if (pvIndex === 1) { this._eval1 = cp; if (pvList) this._pv1 = pvList }
-                else if (pvIndex === 2) { this._eval2 = cp; if (pvList) this._pv2 = pvList }
+                // Stockfish's score is relative to whoever is to move in the
+                // position being analyzed, not always White — normalize to
+                // White's perspective so EvalBar (and anything else reading
+                // `eval`) can treat it as an absolute value.
+                const whiteCp = this._sideToMove === 'b' ? -cp : cp
+                if (pvIndex === 1) { this._eval1 = whiteCp; if (pvList) this._pv1 = pvList }
+                else if (pvIndex === 2) { this._eval2 = whiteCp; if (pvList) this._pv2 = pvList }
               }
             }
             if (line.startsWith('bestmove')) {
@@ -110,6 +115,7 @@ export class LiveEvalEngine {
 
   _begin(fen, depth, resolve) {
     this._activeResolve = resolve
+    this._sideToMove = fen.split(' ')[1] === 'b' ? 'b' : 'w'
     this._eval1 = 0; this._pv1 = []
     this._eval2 = null; this._pv2 = null
     this._worker.postMessage(`position fen ${fen}`)
