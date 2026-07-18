@@ -2,15 +2,16 @@ import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useOpeningsStore } from '../store/useOpeningsStore'
 import { fetchRecentGames } from '../core/ChessComImport'
-import { recommendOpenings } from '../core/OpponentScout'
+import { allOpenings, recommendOpenings } from '../core/OpponentScout'
 
-const MONTHS_SCANNED = 4
+const GAMES_SCANNED = 50
+const TOP_N = 3
 
 export default function ScoutOpponentPage() {
   const [username, setUsername] = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
-  const [result, setResult]     = useState(null) // { username, gameCount, recs }
+  const [result, setResult]     = useState(null) // { username, gameCount, topOpenings, bestCounter }
 
   const navigate   = useAppStore(s => s.navigate)
   const selectTrap = useOpeningsStore(s => s.selectTrap)
@@ -22,13 +23,14 @@ export default function ScoutOpponentPage() {
     if (!name) { setError('Enter a Chess.com username'); return }
     setLoading(true); setError(''); setResult(null)
     try {
-      const games = await fetchRecentGames(name, { months: MONTHS_SCANNED })
+      const games = await fetchRecentGames(name, { limit: GAMES_SCANNED })
       if (games.length === 0) {
         setError(`No recent public games found for "${name}"`)
         return
       }
-      const recs = recommendOpenings(games, { max: 3 })
-      setResult({ username: name, gameCount: games.length, recs })
+      const topOpenings = allOpenings(games).slice(0, TOP_N)
+      const [bestCounter] = recommendOpenings(games, { max: 1 })
+      setResult({ username: name, gameCount: games.length, topOpenings, bestCounter })
     } catch (e) {
       setError(e.message)
     } finally {
@@ -50,7 +52,7 @@ export default function ScoutOpponentPage() {
         <div>
           <h2 className="text-xl font-extrabold text-white font-heading">Scout Opponent</h2>
           <p className="text-muted text-sm mt-0.5">
-            Pull a Chess.com player's recent games and find openings to beat them with
+            Pull a Chess.com player's last {GAMES_SCANNED} games, see their most common openings, and the best one to counter them with
           </p>
         </div>
 
@@ -82,27 +84,43 @@ export default function ScoutOpponentPage() {
             <div className="text-5xl mb-3 opacity-20">🎯</div>
             <div className="font-semibold text-white">No opponent scouted yet</div>
             <p className="text-sm mt-2">
-              Enter a public Chess.com username — the last {MONTHS_SCANNED} months of their games get scanned for openings they score badly against
+              Enter a public Chess.com username — their last {GAMES_SCANNED} games get scanned for their most common openings and the best way to counter them
             </p>
           </div>
         )}
 
         {result && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="text-xs text-muted uppercase tracking-wide font-bold">
               {result.gameCount} games analyzed · {result.username}
             </div>
 
-            {result.recs.length === 0 && (
+            {result.topOpenings.length === 0 && (
               <div className="text-center py-12 text-muted">
-                <div className="font-semibold text-white">No clear pattern yet</div>
-                <p className="text-sm mt-2">Not enough repeated openings in their recent games to find a real weak spot.</p>
+                <div className="font-semibold text-white">No identifiable openings</div>
+                <p className="text-sm mt-2">None of their recent games had an opening we could name.</p>
               </div>
             )}
 
-            {result.recs.map((rec, i) => (
-              <RecommendationCard key={i} rec={rec} opponent={result.username} onPractice={practiceTrap} />
-            ))}
+            {result.topOpenings.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-bold text-white">Their {result.topOpenings.length === 1 ? 'most common opening' : `${result.topOpenings.length} most common openings`}</div>
+                {result.topOpenings.map((spot, i) => (
+                  <OpeningRow key={i} rank={i + 1} spot={spot} />
+                ))}
+              </div>
+            )}
+
+            {result.topOpenings.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-bold text-white">Best counter</div>
+                {result.bestCounter ? (
+                  <BestCounterCard rec={result.bestCounter} onPractice={practiceTrap} />
+                ) : (
+                  <p className="text-sm text-muted">Not enough repeated games in one opening yet to find a genuine weak spot.</p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -110,7 +128,19 @@ export default function ScoutOpponentPage() {
   )
 }
 
-function RecommendationCard({ rec, opponent, onPractice }) {
+function OpeningRow({ rank, spot }) {
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 bg-bg2 rounded-lg border border-border">
+      <div>
+        <div className="font-bold text-white text-sm">{rank}. {spot.openingName}</div>
+        <div className="text-xs text-muted mt-0.5">as {spot.opponentColor} · {spot.games} game{spot.games === 1 ? '' : 's'}</div>
+      </div>
+      <div className="text-sm text-muted font-medium shrink-0">{spot.wins}W-{spot.losses}L-{spot.draws}D</div>
+    </div>
+  )
+}
+
+function BestCounterCard({ rec, onPractice }) {
   const { weakSpot, forColor } = rec
   const name = rec.kind === 'trap' ? rec.trap.name : rec.openingName
 
@@ -128,7 +158,7 @@ function RecommendationCard({ rec, opponent, onPractice }) {
         )}
       </div>
       <p className="text-sm text-muted">
-        {opponent} loses {weakSpot.losses} of {weakSpot.games} recent games ({Math.round(weakSpot.lossRate * 100)}%) playing as {weakSpot.opponentColor} against {weakSpot.openingName} lines.
+        Targets their weakest spot: {weakSpot.openingName} as {weakSpot.opponentColor}, {weakSpot.wins}W-{weakSpot.losses}L-{weakSpot.draws}D ({Math.round(weakSpot.lossRate * 100)}% loss rate).
       </p>
       {rec.kind === 'suggestion' && (
         <p className="text-xs text-muted italic">No matching trap in the library yet — steer into {weakSpot.openingName} and play it out.</p>

@@ -1,9 +1,9 @@
 /**
  * Chess.com Published-Data API — PGN parsing and fetch helpers shared by
- * ImportGamesPage (your own games, single month) and ScoutOpponentPage
- * (an arbitrary opponent's public games, last few months via the archives
- * index). Extracted from ImportGamesPage.jsx once a second consumer needed
- * the same parsing logic.
+ * ImportGamesPage (your own games, single month) and ScoutOpponentPage (an
+ * arbitrary opponent's public games, last N games via the archives index).
+ * Extracted from ImportGamesPage.jsx once a second consumer needed the same
+ * parsing logic.
  */
 
 export function parseGame(g, myUsername) {
@@ -86,17 +86,24 @@ export async function fetchArchives(username) {
   return data.archives || []
 }
 
-// Fetches and parses the most recent `months` of a player's public games —
-// used for opponent scouting, where a single month is too small a sample.
-export async function fetchRecentGames(username, { months = 4 } = {}) {
+// Fetches and parses a player's most recent `limit` public games — used for
+// opponent scouting, where a single month is too small/inconsistent a
+// sample (some months have 2 games, some have 200). Walks the archives
+// newest-month-first, fetching one month at a time until at least `limit`
+// games have been collected (or the player's whole history is exhausted),
+// then trims to exactly the most recent `limit`.
+export async function fetchRecentGames(username, { limit = 50 } = {}) {
   const lower = username.trim().toLowerCase()
   const archives = await fetchArchives(lower)
-  const recent = archives.slice(-months)
-  const perMonth = await Promise.all(recent.map(async url => {
-    const res = await fetch(url)
-    if (!res.ok) return []
+  const games = [] // built oldest-to-newest as older months get prepended
+
+  for (let i = archives.length - 1; i >= 0 && games.length < limit; i--) {
+    const res = await fetch(archives[i])
+    if (!res.ok) continue
     const data = await res.json()
-    return (data.games || []).filter(g => g.pgn)
-  }))
-  return perMonth.flat().map(g => parseGame(g, lower)).reverse()
+    const parsed = (data.games || []).filter(g => g.pgn).map(g => parseGame(g, lower))
+    games.unshift(...parsed)
+  }
+
+  return games.slice(-limit).reverse()
 }

@@ -3,10 +3,13 @@
  * Chess.com games (same shape core/ChessComImport.js#parseGame produces,
  * with `color`/`result`/`opening` from the OPPONENT's own perspective).
  *
- * Finds openings where the opponent has a genuinely bad record (not just a
- * single loss), then tries to match that opening family against our own
- * TRAPS library so the recommendation is something drillable in-app, not
- * just a name. Falls back to a plain suggestion when no trap matches.
+ * Two views over the same bucketed data: allOpenings surfaces every opening
+ * family the opponent has played, most-played first, for a "what do they
+ * actually play" breakdown; findWeakSpots/recommendOpenings narrow that
+ * down to openings with a genuinely bad record (not just a single loss) and
+ * map onto our own TRAPS library so the recommendation is something
+ * drillable in-app, not just a name — falling back to a plain suggestion
+ * when no trap matches.
  */
 import { TRAPS } from '../data/traps'
 
@@ -49,9 +52,10 @@ export function openingsMatch(trapOpening, openingName) {
   })
 }
 
-// Groups games by (color the opponent played, opening family), and returns
-// buckets with at least MIN_SAMPLE games, worst loss-rate first.
-export function findWeakSpots(games, { minSample = MIN_SAMPLE } = {}) {
+// Groups games by (color the opponent played, opening family). Every family
+// with at least one game gets a bucket — filtering/sorting for a particular
+// use (worst record vs. most-played) is left to the caller.
+function bucketOpenings(games) {
   const buckets = new Map()
 
   for (const g of games) {
@@ -70,37 +74,47 @@ export function findWeakSpots(games, { minSample = MIN_SAMPLE } = {}) {
     else b.draws++
   }
 
+  return [...buckets.values()].map(b => ({ ...b, lossRate: b.losses / b.games }))
+}
+
+// Buckets with at least MIN_SAMPLE games, worst loss-rate first.
+export function findWeakSpots(games, { minSample = MIN_SAMPLE } = {}) {
   // Sorted by raw loss count first, not loss rate — with enough games
   // sampled, a 100% rate on the minimum sample size is just as likely to be
   // noise as a real pattern; a higher, still-bad rate backed by more
   // observed losses is the stronger signal.
-  return [...buckets.values()]
+  return bucketOpenings(games)
     .filter(b => b.games >= minSample)
-    .map(b => ({ ...b, lossRate: b.losses / b.games }))
     .sort((a, b) => b.losses - a.losses || b.lossRate - a.lossRate)
 }
 
-// Top `max` opening recommendations for beating this opponent. Each weak
-// spot (an opening the opponent scores badly with, as a given color) maps
-// to us playing the opposite color — if they're found to struggle with
-// their move choices against 1.e4 lines, we play those lines as White.
-export function recommendOpenings(games, { max = 3, minSample = MIN_SAMPLE } = {}) {
-  const weakSpots = findWeakSpots(games, { minSample })
-  const usedTrapIds = new Set()
-  const recs = []
+// Every opening family the opponent has played, regardless of record — for
+// a full prep breakdown rather than just their worst spots. Sorted by how
+// often they reach for it (most-played first), not by how badly it's going.
+export function allOpenings(games) {
+  return bucketOpenings(games)
+    .sort((a, b) => b.games - a.games || b.losses - a.losses || b.lossRate - a.lossRate)
+}
 
-  for (const spot of weakSpots) {
-    if (recs.length >= max) break
-    const forColor = spot.opponentColor === 'black' ? 'white' : 'black'
-    const trap = TRAPS.find(t => t.color === forColor && !usedTrapIds.has(t.id) && openingsMatch(t.opening, spot.openingName))
+// A single opening bucket -> a counter recommendation: play the opposite
+// color from what the opponent played, matched against our own TRAPS
+// library when possible, falling back to a plain named suggestion.
+// Mutates `usedTrapIds` so the same trap is never recommended twice across
+// a batch of buckets.
+function recommendFor(spot, usedTrapIds) {
+  const forColor = spot.opponentColor === 'black' ? 'white' : 'black'
+  const trap = TRAPS.find(t => t.color === forColor && !usedTrapIds.has(t.id) && openingsMatch(t.opening, spot.openingName))
 
-    if (trap) {
-      usedTrapIds.add(trap.id)
-      recs.push({ kind: 'trap', trap, forColor, weakSpot: spot })
-    } else {
-      recs.push({ kind: 'suggestion', openingName: spot.openingName, forColor, weakSpot: spot })
-    }
+  if (trap) {
+    usedTrapIds.add(trap.id)
+    return { kind: 'trap', trap, forColor, weakSpot: spot }
   }
+  return { kind: 'suggestion', openingName: spot.openingName, forColor, weakSpot: spot }
+}
 
-  return recs
+// Top `max` opening recommendations for beating this opponent, restricted
+// to their genuine weak spots (see findWeakSpots).
+export function recommendOpenings(games, { max = 3, minSample = MIN_SAMPLE } = {}) {
+  const usedTrapIds = new Set()
+  return findWeakSpots(games, { minSample }).slice(0, max).map(spot => recommendFor(spot, usedTrapIds))
 }

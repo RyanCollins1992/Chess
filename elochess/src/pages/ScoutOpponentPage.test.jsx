@@ -38,6 +38,16 @@ describe('ScoutOpponentPage', () => {
     expect(await screen.findByText('No recent public games found for "ghost"')).toBeInTheDocument()
   })
 
+  it('scans the last 50 games, not a fixed number of months', async () => {
+    const spy = vi.spyOn(ChessComImport, 'fetchRecentGames').mockResolvedValue([lossGame('Italian Game'), lossGame('Italian Game'), lossGame('Italian Game')])
+    render(<ScoutOpponentPage />)
+    fireEvent.change(screen.getByLabelText("Their Chess.com username"), { target: { value: 'weakling' } })
+    fireEvent.click(screen.getByText('Scout'))
+
+    await screen.findByText('3 games analyzed · weakling', { exact: false })
+    expect(spy).toHaveBeenCalledWith('weakling', { limit: 50 })
+  })
+
   it('a weak spot that matches a trap shows a "Practice this trap" recommendation', async () => {
     // 3 losses as Black against Italian Game lines — enough to clear MIN_SAMPLE
     // and matches the "fried-liver" trap's opening ("Italian Game", White).
@@ -48,6 +58,7 @@ describe('ScoutOpponentPage', () => {
     fireEvent.click(screen.getByText('Scout'))
 
     expect(await screen.findByText('3 games analyzed · weakling', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('1. Italian Game')).toBeInTheDocument()
     expect(screen.getByText('Play as white')).toBeInTheDocument()
     expect(screen.getByText('Practice this trap')).toBeInTheDocument()
   })
@@ -77,5 +88,53 @@ describe('ScoutOpponentPage', () => {
     expect(await screen.findByText('Some Obscure Line')).toBeInTheDocument()
     expect(screen.queryByText('Practice this trap')).not.toBeInTheDocument()
     expect(screen.getByText('No matching trap in the library yet', { exact: false })).toBeInTheDocument()
+  })
+
+  it('lists the top 3 most-played openings, most common first, capped at 3', async () => {
+    const games = [
+      // "Big Opening": played 5 times
+      ...Array(5).fill(0).map(() => lossGame('Big Opening')),
+      // "Mid Opening": played 4 times
+      ...Array(4).fill(0).map(() => lossGame('Mid Opening')),
+      // "Small Opening": played 3 times
+      ...Array(3).fill(0).map(() => lossGame('Small Opening')),
+      // "Rarest Opening": played once — should be excluded from the top 3
+      lossGame('Rarest Opening'),
+    ]
+    vi.spyOn(ChessComImport, 'fetchRecentGames').mockResolvedValue(games)
+    render(<ScoutOpponentPage />)
+    fireEvent.change(screen.getByLabelText("Their Chess.com username"), { target: { value: 'grinder' } })
+    fireEvent.click(screen.getByText('Scout'))
+
+    expect(await screen.findByText('1. Big Opening')).toBeInTheDocument()
+    expect(screen.getByText('2. Mid Opening')).toBeInTheDocument()
+    expect(screen.getByText('3. Small Opening')).toBeInTheDocument()
+    expect(screen.queryByText('Rarest Opening', { exact: false })).not.toBeInTheDocument()
+  })
+
+  it('an opening below the weak-spot sample size still shows up in the top list, with no best-counter trap', async () => {
+    const games = [lossGame('Italian Game')] // a single game — too small a sample for a genuine weak spot
+    vi.spyOn(ChessComImport, 'fetchRecentGames').mockResolvedValue(games)
+    render(<ScoutOpponentPage />)
+    fireEvent.change(screen.getByLabelText("Their Chess.com username"), { target: { value: 'weakling' } })
+    fireEvent.click(screen.getByText('Scout'))
+
+    expect(await screen.findByText('1. Italian Game')).toBeInTheDocument()
+    expect(screen.getByText('Not enough repeated games in one opening yet to find a genuine weak spot.')).toBeInTheDocument()
+  })
+
+  it('lists openings with a winning record too, not just losing ones', async () => {
+    const games = [
+      { color: 'White', result: 'Win', opening: 'Queens Gambit' },
+      { color: 'White', result: 'Win', opening: 'Queens Gambit' },
+      { color: 'White', result: 'Win', opening: 'Queens Gambit' },
+    ]
+    vi.spyOn(ChessComImport, 'fetchRecentGames').mockResolvedValue(games)
+    render(<ScoutOpponentPage />)
+    fireEvent.change(screen.getByLabelText("Their Chess.com username"), { target: { value: 'crusher' } })
+    fireEvent.click(screen.getByText('Scout'))
+
+    expect(await screen.findByText('1. Queens Gambit')).toBeInTheDocument()
+    expect(screen.getByText('3W-0L-0D')).toBeInTheDocument()
   })
 })

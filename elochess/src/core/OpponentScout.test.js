@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { openingFamily, openingsMatch, findWeakSpots, recommendOpenings } from './OpponentScout'
+import { openingFamily, openingsMatch, findWeakSpots, recommendOpenings, allOpenings } from './OpponentScout'
 
 function game({ color, result, opening }) {
   return { color, result, opening }
@@ -149,5 +149,46 @@ describe('recommendOpenings', () => {
       ...lossTrio('Black', 'Caro-Kann Defence: Classical'),
     ]
     expect(recommendOpenings(games, { max: 2 })).toHaveLength(2)
+  })
+})
+
+describe('allOpenings', () => {
+  it('includes buckets below MIN_SAMPLE that findWeakSpots would exclude', () => {
+    const games = [
+      game({ color: 'Black', result: 'Win', opening: 'Italian Game' }),
+      game({ color: 'Black', result: 'Loss', opening: 'Italian Game' }),
+    ]
+    const spots = allOpenings(games)
+    expect(spots).toHaveLength(1)
+    expect(spots[0].games).toBe(2)
+  })
+
+  it('includes openings with a winning record, not just weak spots', () => {
+    const games = [
+      game({ color: 'White', result: 'Win', opening: 'Queens Gambit' }),
+      game({ color: 'White', result: 'Win', opening: 'Queens Gambit' }),
+      game({ color: 'White', result: 'Win', opening: 'Queens Gambit' }),
+    ]
+    const spots = allOpenings(games)
+    expect(spots).toHaveLength(1)
+    expect(spots[0].wins).toBe(3)
+    expect(spots[0].losses).toBe(0)
+  })
+
+  it('sorts by games played first, not by loss count', () => {
+    const games = [
+      // "Big Opening": played 5 times, all wins
+      game({ color: 'Black', result: 'Win', opening: 'Big Opening' }),
+      game({ color: 'Black', result: 'Win', opening: 'Big Opening' }),
+      game({ color: 'Black', result: 'Win', opening: 'Big Opening' }),
+      game({ color: 'Black', result: 'Win', opening: 'Big Opening' }),
+      game({ color: 'Black', result: 'Win', opening: 'Big Opening' }),
+      // "Rare Opening": played twice, both losses
+      game({ color: 'Black', result: 'Loss', opening: 'Rare Opening' }),
+      game({ color: 'Black', result: 'Loss', opening: 'Rare Opening' }),
+    ]
+    const spots = allOpenings(games)
+    expect(spots[0].openingName).toBe('Big Opening')
+    expect(spots[1].openingName).toBe('Rare Opening')
   })
 })
