@@ -22,6 +22,7 @@ import ImportGamesPage    from './pages/ImportGamesPage'
 import GameReviewPage     from './pages/GameReviewPage'
 import LearnOpeningsPage  from './pages/LearnOpeningsPage'
 import ScoutOpponentPage  from './pages/ScoutOpponentPage'
+import OpeningDatabasePage from './pages/OpeningDatabasePage'
 
 const PAGES = {
   'dashboard':       <DashboardPage />,
@@ -44,6 +45,7 @@ const PAGES = {
   'scout-opponent':  <ScoutOpponentPage />,
   'game-review':     <GameReviewPage />,
   'learn-openings':  <LearnOpeningsPage />,
+  'opening-database': <OpeningDatabasePage />,
 }
 
 export default function App() {

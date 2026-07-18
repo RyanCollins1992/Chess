@@ -5,6 +5,7 @@ import { KNIGHTPATH_NAV_ICONS } from '../../styles/knightpathIcons'
 const PAGE_TITLES = {
   'dashboard':      'Dashboard',
   'openings':       'Openings',
+  'opening-database':'Opening Database',
   'spaced-review':  'Spaced Review',
   'progress':       'My Progress',
   'import-games':   'Import Games',
