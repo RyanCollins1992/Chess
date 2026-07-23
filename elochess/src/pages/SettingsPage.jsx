@@ -183,7 +183,7 @@ export default function SettingsPage() {
               Includes <span className="text-white">Stockfish 18</span> (unmodified,{' '}
               <a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">source</a>),
               licensed under the{' '}
-              <a href="https://www.gnu.org/licenses/gpl-3.0.txt" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">GNU GPL v3</a>.
+              <a href="/stockfish/COPYING" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">GNU GPL v3</a>.
             </p>
           </div>
           <div>
