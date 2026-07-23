@@ -4,6 +4,7 @@ import { ChessEngine } from '../../core/ChessEngine'
 import { useAppStore } from '../../store/useAppStore'
 import { KNIGHTPATH_THEME } from '../../styles/knightpath'
 import { DEFAULT_PIECE_STYLE_ID } from '../../styles/pieceStyles'
+import { SOLID_PIECE_SHAPES } from '../../styles/solidPieceIcons'
 import { DURATION } from '../../styles/motion'
 
 // "Classic" — the plain Unicode chess glyphs (matching KnightPath's own
@@ -30,29 +31,84 @@ const GLYPHS = {
   wP: '♙', wR: '♖', wN: '♘', wB: '♗', wQ: '♕', wK: '♔',
   bP: '♟', bR: '♜', bN: '♞', bB: '♝', bQ: '♛', bK: '♚',
 }
-const CLASSIC_PIECES = Object.fromEntries(
-  Object.entries(GLYPHS).map(([code, glyph]) => {
-    const isWhite = code[0] === 'w'
-    return [code, () => (
-      <div
-        style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          containerType: 'inline-size', pointerEvents: 'none',
-        }}
-      >
-        <span
+
+// Shared wrapper for any glyph-based piece set — see the sizing/positioning
+// notes above about the absolute+container-query approach. `styleFor` gets
+// (isWhite) and returns the span's color/textShadow/stroke.
+function glyphPieceSet(glyphs, styleFor) {
+  return Object.fromEntries(
+    Object.entries(glyphs).map(([code, glyph]) => {
+      const isWhite = code[0] === 'w'
+      return [code, () => (
+        <div
           style={{
-            fontFamily: "'Inter', -apple-system, sans-serif",
-            fontSize: '76cqw', lineHeight: 1,
-            color: isWhite ? '#fff' : '#111',
-            textShadow: isWhite ? '0 1px 3px rgba(0,0,0,0.9)' : '0 1px 2px rgba(255,255,255,0.15)',
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            containerType: 'inline-size', pointerEvents: 'none',
           }}
         >
-          {glyph}
-        </span>
-      </div>
+          <span
+            style={{
+              fontFamily: "'Inter', -apple-system, sans-serif",
+              fontSize: '76cqw', lineHeight: 1,
+              ...styleFor(isWhite),
+            }}
+          >
+            {glyph}
+          </span>
+        </div>
+      )]
+    })
+  )
+}
+
+const CLASSIC_PIECES = glyphPieceSet(GLYPHS, isWhite => ({
+  color: isWhite ? '#fff' : '#111',
+  textShadow: isWhite ? '0 1px 3px rgba(0,0,0,0.9)' : '0 1px 2px rgba(255,255,255,0.15)',
+}))
+
+// "Solid" — original hand-built flat vector silhouettes (src/styles/
+// solidPieceIcons.js), not font glyphs — replaced the earlier glyph-based
+// version because reusing Unicode's black-piece codepoints for white (just
+// recolored via CSS) still read as "a font character," not a real piece.
+// Each type is one shared shape; white gets a filled+stroked treatment for
+// contrast on light squares, black gets a plain filled silhouette — same
+// per-color distinction real solid piece sets (Merida, Alpha, etc.) use.
+function renderIconShape(shape, key, paintProps) {
+  switch (shape.tag) {
+    case 'circle':
+      return <circle key={key} cx={shape.cx} cy={shape.cy} r={shape.r} {...paintProps} />
+    case 'rect':
+      return <rect key={key} x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} {...paintProps} />
+    case 'polygon':
+      return <polygon key={key} points={shape.points} {...paintProps} />
+    case 'path':
+      return <path key={key} d={shape.d} {...paintProps} />
+    default:
+      return null
+  }
+}
+const SOLID_PIECES = Object.fromEntries(
+  ['P', 'R', 'N', 'B', 'Q', 'K'].flatMap(type => ['w', 'b'].map(color => {
+    const code = color + type
+    const isWhite = color === 'w'
+    const paintProps = {
+      fill: isWhite ? '#fff' : '#111',
+      stroke: isWhite ? 'rgba(0,0,0,0.9)' : 'none',
+      strokeWidth: isWhite ? 3 : 0,
+      strokeLinejoin: 'round',
+    }
+    return [code, () => (
+      <svg
+        viewBox="0 0 100 100"
+        style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none',
+          filter: isWhite ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' : 'drop-shadow(0 1px 2px rgba(255,255,255,0.15))',
+        }}
+      >
+        {SOLID_PIECE_SHAPES[type].map((shape, i) => renderIconShape(shape, i, paintProps))}
+      </svg>
     )]
-  })
+  }))
 )
 
 // "Fantasy" piece set by Maurizio Monge (github.com/maurimo/chess-art),
@@ -84,8 +140,16 @@ const FANTASY_PIECES = Object.fromEntries(
 
 const PIECE_SETS = {
   classic: CLASSIC_PIECES,
+  solid: SOLID_PIECES,
   fantasy: FANTASY_PIECES,
 }
+
+// Tiny sword marking a legal (non-capture) destination square, in place of a
+// plain dot — a data-URI SVG so it can be set via squareStyles'
+// backgroundImage like the dot it replaces, no extra DOM node needed.
+// Blade + crossguard + grip + pommel as separate subpaths in one <path>.
+const LEGAL_MOVE_SWORD_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='rgba(0,0,0,0.4)' d='M50 2 L64 62 L36 62 Z M20 64 H80 V76 H20 Z M42 76 H58 V90 H42 Z M50 88 L57 95 L50 100 L43 95 Z'/></svg>`
+const LEGAL_MOVE_SWORD_URL = `url("data:image/svg+xml,${encodeURIComponent(LEGAL_MOVE_SWORD_SVG)}")`
 
 function findKingSquare(board, color) {
   for (const row of board) {
@@ -162,7 +226,12 @@ export function Chessboard({
           transition: `box-shadow ${DURATION.quick}s ease, background-color ${DURATION.quick}s ease`,
           ...(m.captured
             ? { boxShadow: 'inset 0 0 0 3px rgba(0,0,0,0.35)' }
-            : { backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.25) 19%, transparent 20%)' }),
+            : {
+                backgroundImage: LEGAL_MOVE_SWORD_URL,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                backgroundSize: '38% 38%',
+              }),
         }
       }
     }

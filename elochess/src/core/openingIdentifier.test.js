@@ -27,9 +27,20 @@ describe('identifyOpening', () => {
   })
 
   it('normalizes decorated SAN (check/mate/! symbols) when comparing', () => {
-    // Scholar's Mate is stored as ['Qh5', 'Nc6', 'Qxf7#'] — a played move
-    // list without the trailing "#" should still match.
-    expect(identifyOpening(['Qh5', 'Nc6', 'Qxf7'])).toBe("Scholar's Mate")
+    // Fried Liver Attack's own line includes a decorated "Bb5+" — a played
+    // move list without the trailing "+" should still match it.
+    const moves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'd5', 'exd5', 'Na5', 'Bb5']
+    expect(identifyOpening(moves)).toBe('Fried Liver Attack')
+  })
+
+  it('excludes traps whose fen is not the standard starting position', () => {
+    // Scholar's Mate is stored relative to a mid-opening fen (after
+    // 1.e4 e5 2.Bc4) — its moves array ['Qh5','Nc6','Qxf7#'] is a
+    // continuation from THAT position, not a from-move-1 sequence, so it
+    // must not be matched against a real from-the-start move list (doing so
+    // previously caused false positives — see OpponentScout's "Sicilian
+    // Trap (Black)" regression).
+    expect(identifyOpening(['Qh5', 'Nc6', 'Qxf7'])).toBeNull()
   })
 
   it('resolves a shared opening prefix before any traps diverge', () => {
@@ -38,5 +49,12 @@ describe('identifyOpening', () => {
     const result = identifyOpening(['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'])
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
+  })
+
+  it('falls back to ecoDatabase.js for lines outside the curated traps/repertoire', () => {
+    // "Amar Opening: Gambit" exists only in ecoDatabase.js, not TRAPS or
+    // OPENING_REPERTOIRE — proves the broader database is actually searched.
+    const moves = ['Nh3', 'd5', 'g3', 'e5', 'f4', 'Bxh3', 'Bxh3', 'exf4']
+    expect(identifyOpening(moves)).toBe('Amar Opening: Gambit')
   })
 })

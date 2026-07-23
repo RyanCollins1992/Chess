@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Chessboard } from '../components/ui/Chessboard'
 import MoveLedger from '../components/ui/MoveLedger'
+import TrapLessonCard from '../components/ui/TrapLessonCard'
 import { Chess } from 'chess.js'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useOpeningsStore } from '../store/useOpeningsStore'
@@ -153,7 +154,7 @@ export default function OpeningsPage() {
         {selectedTrap
           ? <TrapStudy key={selectedTrap.id} trap={selectedTrap} showToast={showToast} />
           : selectedLine
-            ? <RepertoireStudy key={selectedLine.name} line={selectedLine} group={selectedRepertoire} />
+            ? <RepertoireStudy key={selectedLine.name} line={selectedLine} group={selectedRepertoire} showToast={showToast} />
             : <TrapEmpty />}
       </div>
     </div>
@@ -220,7 +221,11 @@ function TrapStudy({ trap, showToast }) {
   const [mistakes, setMistakes] = useState(0)
   const [complete, setComplete] = useState(false)
   const [flash, setFlash]       = useState(null)
-  const [browseMode, setBrowseMode] = useState(false)
+  // 'drill' | 'browse' | 'lesson' — browseMode kept as a derived boolean so
+  // the existing drill/browse logic below (which all reads `browseMode`)
+  // stays untouched; lesson mode short-circuits the render entirely instead.
+  const [viewMode, setViewMode] = useState('drill')
+  const browseMode = viewMode === 'browse'
   const [browseFens] = useState(() => {
     // Pre-compute all FENs for prev/next navigation
     const c = new Chess(trap.fen)
@@ -323,7 +328,7 @@ function TrapStudy({ trap, showToast }) {
     setMistakes(0)
     setComplete(false)
     setFlash(null)
-    setBrowseMode(false)
+    setViewMode('drill')
     setBrowseIdx(0)
     setDrillPreviewIdx(null)
   }
@@ -354,14 +359,14 @@ function TrapStudy({ trap, showToast }) {
       setDrillPreviewIdx(next)
     }
   }
-  const toggleBrowse = () => {
-    setBrowseMode(b => !b)
+  const selectMode = (mode) => {
+    setViewMode(mode)
     // Always start Browse mode from the beginning of the line rather than
     // wherever the live drill currently sits — Browse exists to review the
     // whole trap, and seeding from moveIdx meant finishing a drill (or
     // switching mid-drill) dropped you on the last move instead of the
-    // first. browseIdx isn't read in Drill mode, so resetting it
-    // unconditionally here is safe in both toggle directions.
+    // first. browseIdx/drillPreviewIdx aren't read outside Browse/Drill, so
+    // resetting them unconditionally here is safe for every mode switch.
     setBrowseIdx(0)
     setDrillPreviewIdx(null)
   }
@@ -371,6 +376,10 @@ function TrapStudy({ trap, showToast }) {
     : (browseMode ? browseFens[browseIdx] : fen)
   const studyCount   = progressManager.getTrapStudyCount(trap.id)
   const currentMoveNum = browseMode ? browseIdx : (drillPreviewIdx != null ? drillPreviewIdx : moveIdx)
+
+  if (viewMode === 'lesson') {
+    return <TrapLessonCard trap={trap} onPracticeClick={() => selectMode('drill')} />
+  }
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -383,9 +392,14 @@ function TrapStudy({ trap, showToast }) {
             <span className={`text-xs font-bold px-2 py-1 rounded-lg ${browseMode ? 'bg-accent/20 text-accent' : 'bg-gold/20 text-gold'}`}>
               {browseMode ? '📖 Browse Mode' : '🎯 Drill Mode'}
             </span>
-            <button onClick={toggleBrowse} className="text-xs text-muted hover:text-white border border-border rounded-lg px-3 py-1 transition-colors">
-              {browseMode ? 'Switch to Drill' : 'Switch to Browse'}
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => selectMode('lesson')} className="text-xs text-muted hover:text-white border border-border rounded-lg px-3 py-1 transition-colors">
+                📇 Lesson Card
+              </button>
+              <button onClick={() => selectMode(browseMode ? 'drill' : 'browse')} className="text-xs text-muted hover:text-white border border-border rounded-lg px-3 py-1 transition-colors">
+                {browseMode ? 'Switch to Drill' : 'Switch to Browse'}
+              </button>
+            </div>
           </div>
 
           {/* Board */}
@@ -489,7 +503,15 @@ function TrapStudy({ trap, showToast }) {
   )
 }
 
-function RepertoireStudy({ line, group }) {
+// Wrong-move mistake count for the CURRENT expected move maps directly to
+// hint level — no separate "hintLevel" state needed, it's a pure function of
+// mistakesForCurrentMove (see PRACTICE_MAX_MISTAKES below for the reset
+// threshold). Keeping this as a derivation rather than parallel state is
+// what keeps the reset-on-correct-move logic trivial (just zero one number).
+const PRACTICE_MAX_MISTAKES = 4 // on the 4th wrong attempt, reset the whole line
+const normalizeSan = (s) => s.replace(/[+#!?]/g, '')
+
+function RepertoireStudy({ line, group, showToast }) {
   const [browseFens] = useState(() => {
     const c = new Chess()
     const fens = [c.fen()]
@@ -501,63 +523,257 @@ function RepertoireStudy({ line, group }) {
   // Starts at the beginning of the line (Ryan asked to stop landing on the
   // fully-played-out final position by default) — was `browseFens.length - 1`.
   const [browseIdx, setBrowseIdx] = useState(0)
+  const atEnd = browseIdx >= browseFens.length - 1
+
+  // 'browse' | 'practice' | 'complete'
+  const [mode, setMode] = useState('browse')
+
+  // A black-repertoire line's `moves` array still starts with White's move 1
+  // (the array represents the whole game, not just Black's replies) — same
+  // shape as TRAPS. So practice for a black line auto-plays White's first
+  // move and the user only ever inputs Black's side, exactly like TrapStudy's
+  // `primed` pattern for black traps.
+  // The user only ever plays their own repertoire color — the other side's
+  // replies are the computer's, auto-played after a short delay (same
+  // pattern TrapStudy already uses for black traps' auto-played White
+  // moves). Ply 0 is always White, so "is this the user's ply" is just
+  // parity against which color the line belongs to.
+  const isUsersMove = (idx) => (group?.color === 'black' ? idx % 2 === 1 : idx % 2 === 0)
+
+  // If the computer moves first (a black-repertoire line), that opening move
+  // has to be primed into the board's INITIAL fen via a lazy useState
+  // initializer, not a mount-time effect — this project's lint config
+  // (react-hooks/set-state-in-effect) forbids driving it with useEffect, and
+  // TrapStudy hit this exact wall solving the same problem for black traps.
+  const [primed] = useState(() => {
+    if (isUsersMove(0) || line.moves.length === 0) return { fen: undefined, moveIdx: 0 }
+    const c = new Chess()
+    try {
+      c.move(line.moves[0])
+      return { fen: c.fen(), moveIdx: 1 }
+    } catch {
+      return { fen: undefined, moveIdx: 0 }
+    }
+  })
+
+  const { fen: practiceFen, tryMove, move, undo, reset: resetPracticeBoard } = useChessBoard(primed.fen)
+  const [expectedMoveIndex, setExpectedMoveIndex] = useState(primed.moveIdx)
+  const [mistakesForCurrentMove, setMistakesForCurrentMove] = useState(0)
+  const [flash, setFlash] = useState(null)
+
+  const startPractice = () => {
+    resetPracticeBoard(primed.fen)
+    setExpectedMoveIndex(primed.moveIdx)
+    setMistakesForCurrentMove(0)
+    setFlash(null)
+    setMode('practice')
+  }
+
+  const resetPractice = () => {
+    resetPracticeBoard(primed.fen)
+    setExpectedMoveIndex(primed.moveIdx)
+    setMistakesForCurrentMove(0)
+    setFlash(null)
+  }
+
+  // The move chess.js resolves the expected SAN to in the CURRENT position —
+  // gives real {from,to} squares for the hint highlight/arrow without
+  // re-implementing SAN disambiguation by hand.
+  const expectedMove = useMemo(() => {
+    if (mode !== 'practice') return null
+    const expectedSan = line.moves[expectedMoveIndex]
+    if (!expectedSan) return null
+    // Built from the `practiceFen` STATE (not chessRef, which the project's
+    // lint rules forbid reading during render) — a fresh Chess instance is
+    // cheap and lets chess.js resolve the expected SAN's real {from,to}
+    // without hand-rolling disambiguation.
+    return new Chess(practiceFen).moves({ verbose: true })
+      .find(m => normalizeSan(m.san) === normalizeSan(expectedSan)) || null
+  }, [mode, expectedMoveIndex, practiceFen, line.moves])
+
+  const handlePracticeDrop = ({ sourceSquare: from, targetSquare: to }) => {
+    if (mode !== 'practice') return false
+    const expectedSan = line.moves[expectedMoveIndex]
+    const expectedPromotion = expectedSan?.match(/=([QRBN])/i)?.[1]?.toLowerCase() || 'q'
+    const result = tryMove(from, to, expectedPromotion)
+    if (!result) return false // not even a legal chess move — no mistake counted
+
+    if (normalizeSan(result.san) === normalizeSan(expectedSan)) {
+      setFlash('correct')
+      setTimeout(() => setFlash(null), 500)
+      // Correct move: hints/mistakes for the move just played are done with —
+      // reset for whatever comes next, per "hints should never persist after
+      // a correct move."
+      setMistakesForCurrentMove(0)
+      const next = expectedMoveIndex + 1
+      setExpectedMoveIndex(next)
+
+      if (next >= line.moves.length) {
+        setMode('complete')
+      } else if (!isUsersMove(next)) {
+        // The computer plays the other color — auto-play its reply after a
+        // beat, same delay TrapStudy uses for its own auto-played moves.
+        setTimeout(() => {
+          setFlash(null)
+          if (move(line.moves[next])) {
+            const after = next + 1
+            setExpectedMoveIndex(after)
+            if (after >= line.moves.length) setMode('complete')
+          }
+        }, 500)
+      }
+      return true
+    }
+
+    undo()
+    setFlash('wrong')
+    setTimeout(() => setFlash(null), 500)
+    const mistakes = mistakesForCurrentMove + 1
+    if (mistakes >= PRACTICE_MAX_MISTAKES) {
+      showToast?.('❌ Reset — starting the line over', 'error', 1800)
+      resetPractice()
+    } else {
+      showToast?.('Incorrect — try again', 'error', 1200)
+      setMistakesForCurrentMove(mistakes)
+    }
+    return true
+  }
+
+  const showSquareHint = mode === 'practice' && mistakesForCurrentMove >= 2 && expectedMove
+  const showArrowHint = mode === 'practice' && mistakesForCurrentMove >= 3 && expectedMove
+  const practiceSquareStyles = showSquareHint
+    ? { [expectedMove.from]: { backgroundColor: 'rgba(255, 215, 0, 0.4)' } }
+    : undefined
+  const practiceArrows = showArrowHint
+    ? [{ startSquare: expectedMove.from, endSquare: expectedMove.to, color: 'rgba(255, 165, 0, 0.8)' }]
+    : []
+
+  const practiceMoveNum = expectedMoveIndex // ply count already played correctly, for the ledger
 
   return (
     <div className="flex h-full overflow-hidden">
       <div className="flex flex-col items-center justify-center p-6 flex-1">
         <div className="w-full max-w-[440px]">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold px-2 py-1 rounded-lg bg-accent/20 text-accent">
-              📖 Opening Theory
-            </span>
-            <span className="text-xs text-muted">{group?.name}</span>
-          </div>
+          {mode === 'browse' && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold px-2 py-1 rounded-lg bg-accent/20 text-accent">
+                  📖 Opening Theory
+                </span>
+                <span className="text-xs text-muted">{group?.name}</span>
+              </div>
 
-          <div className="rounded-xl overflow-hidden">
-            <Chessboard
-              position={browseFens[browseIdx]}
-              boardOrientation={group?.color === 'black' ? 'black' : 'white'}
-              arePiecesDraggable={false}
-              customBoardStyle={{ borderRadius: '8px' }}
-            />
-          </div>
+              <div className="rounded-xl overflow-hidden">
+                <Chessboard
+                  position={browseFens[browseIdx]}
+                  boardOrientation={group?.color === 'black' ? 'black' : 'white'}
+                  arePiecesDraggable={false}
+                  customBoardStyle={{ borderRadius: '8px' }}
+                />
+              </div>
 
-          <div className="mt-3 bg-bg3 rounded-full h-1.5 overflow-hidden">
-            <div className="h-full bg-gold transition-all duration-500 rounded-full"
-              style={{ width: browseFens.length > 1 ? `${(browseIdx / (browseFens.length - 1)) * 100}%` : '0%' }} />
-          </div>
+              <div className="mt-3 bg-bg3 rounded-full h-1.5 overflow-hidden">
+                <div className="h-full bg-gold transition-all duration-500 rounded-full"
+                  style={{ width: browseFens.length > 1 ? `${(browseIdx / (browseFens.length - 1)) * 100}%` : '0%' }} />
+              </div>
 
-          <div className="flex items-center justify-between mt-3 gap-2">
-            <button onClick={() => setBrowseIdx(i => Math.max(0, i - 1))}
-              disabled={browseIdx === 0}
-              className="flex-1 btn-ghost text-sm disabled:opacity-30">
-              ◀ Prev
-            </button>
-            <span className="text-xs text-muted px-2 text-center min-w-20">
-              {browseIdx === 0 ? 'Start' : `Move ${Math.ceil(browseIdx / 2)} of ${Math.ceil(line.moves.length / 2)}`}
-            </span>
-            <button onClick={() => setBrowseIdx(i => Math.min(browseFens.length - 1, i + 1))}
-              disabled={browseIdx >= browseFens.length - 1}
-              className="flex-1 btn-ghost text-sm disabled:opacity-30">
-              Next ▶
-            </button>
-          </div>
+              <div className="flex items-center justify-between mt-3 gap-2">
+                <button onClick={() => setBrowseIdx(i => Math.max(0, i - 1))}
+                  disabled={browseIdx === 0}
+                  className="flex-1 btn-ghost text-sm disabled:opacity-30">
+                  ◀ Prev
+                </button>
+                <span className="text-xs text-muted px-2 text-center min-w-20">
+                  {browseIdx === 0 ? 'Start' : `Move ${Math.ceil(browseIdx / 2)} of ${Math.ceil(line.moves.length / 2)}`}
+                </span>
+                <button onClick={() => setBrowseIdx(i => Math.min(browseFens.length - 1, i + 1))}
+                  disabled={atEnd}
+                  className="flex-1 btn-ghost text-sm disabled:opacity-30">
+                  Next ▶
+                </button>
+              </div>
 
-          <div className="mt-2 flex flex-wrap gap-1">
-            {line.moves.map((m, i) => (
-              <span key={i}
-                onClick={() => setBrowseIdx(i + 1)}
-                className={`text-xs font-mono px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                  i + 1 === browseIdx
-                    ? 'text-gold bg-gold/20 font-bold'
-                    : i < browseIdx
-                      ? 'text-accent2 bg-accent2/10'
-                      : 'text-muted hover:text-white'
-                }`}>
-                {i % 2 === 0 ? `${Math.floor(i / 2) + 1}.` : ''}{m}
-              </span>
-            ))}
-          </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {line.moves.map((m, i) => (
+                  <span key={i}
+                    onClick={() => setBrowseIdx(i + 1)}
+                    className={`text-xs font-mono px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                      i + 1 === browseIdx
+                        ? 'text-gold bg-gold/20 font-bold'
+                        : i < browseIdx
+                          ? 'text-accent2 bg-accent2/10'
+                          : 'text-muted hover:text-white'
+                    }`}>
+                    {i % 2 === 0 ? `${Math.floor(i / 2) + 1}.` : ''}{m}
+                  </span>
+                ))}
+              </div>
+
+              {atEnd && (
+                <div className="mt-4 bg-gold/10 border border-gold/30 rounded-xl p-4 text-center">
+                  <div className="text-white font-semibold text-sm">Now your turn — try this out.</div>
+                  <div className="text-muted text-xs mt-1 mb-3">Replay this line from memory. Wrong moves get progressively bigger hints.</div>
+                  <button onClick={startPractice} className="w-full bg-gold text-bg font-bold text-sm py-2 rounded-lg hover:opacity-90 transition-opacity">
+                    Try it yourself →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {(mode === 'practice' || mode === 'complete') && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${mode === 'complete' ? 'bg-accent2/20 text-accent2' : 'bg-gold/20 text-gold'}`}>
+                  {mode === 'complete' ? '✅ Complete' : '🎯 Practice'}
+                </span>
+                <button onClick={() => setMode('browse')} className="text-xs text-muted hover:text-white border border-border rounded-lg px-3 py-1 transition-colors">
+                  Back to Browse
+                </button>
+              </div>
+
+              <div className={`rounded-xl overflow-hidden transition-all duration-300 ${
+                flash === 'correct' ? 'ring-2 ring-accent2' :
+                flash === 'wrong'   ? 'ring-2 ring-danger'  : ''
+              }`}>
+                <Chessboard
+                  position={mode === 'complete' ? browseFens[browseFens.length - 1] : practiceFen}
+                  onPieceDrop={handlePracticeDrop}
+                  boardOrientation={group?.color === 'black' ? 'black' : 'white'}
+                  customBoardStyle={{ borderRadius: '8px' }}
+                  customSquareStyles={practiceSquareStyles}
+                  arrows={practiceArrows}
+                  arePiecesDraggable={mode === 'practice'}
+                />
+              </div>
+
+              <div className="mt-3 bg-bg3 rounded-full h-1.5 overflow-hidden">
+                <div className="h-full bg-gold transition-all duration-500 rounded-full"
+                  style={{ width: `${(practiceMoveNum / line.moves.length) * 100}%` }} />
+              </div>
+
+              <div className="mt-3 text-center">
+                {mode === 'complete' ? (
+                  <div className="text-accent2 text-sm font-semibold">🎉 Nailed it from memory!</div>
+                ) : (
+                  <span className="text-xs text-muted">
+                    Move {Math.floor(expectedMoveIndex / 2) + 1} of {Math.ceil(line.moves.length / 2)}
+                    {mistakesForCurrentMove > 0 && <span className="text-danger ml-2">({mistakesForCurrentMove} miss{mistakesForCurrentMove !== 1 ? 'es' : ''} on this move)</span>}
+                  </span>
+                )}
+              </div>
+
+              <MoveLedger moveList={line.moves} activeIdx={practiceMoveNum - 1} className="mt-2" />
+
+              <div className="flex items-center gap-2 mt-3">
+                {mode === 'complete' ? (
+                  <button onClick={startPractice} className="flex-1 btn-ghost text-sm">↺ Practice Again</button>
+                ) : (
+                  <button onClick={resetPractice} className="flex-1 btn-ghost text-sm">↺ Restart</button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 

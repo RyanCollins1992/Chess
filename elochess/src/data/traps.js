@@ -2,7 +2,13 @@
  * TRAPS
  * Each trap has:
  *   id, name, color, opening, description, fen (start), moves (SAN array),
- *   level, tags, isMate
+ *   level, tags, isMate, lessonCard
+ *
+ * lessonCard powers the "Trap Training" lesson-card view (OpeningsPage.jsx /
+ * TrapLessonCard.jsx) — a single-position teaching card in the style of a
+ * printed puzzle-book page: lesson / what-to-look-for / goal / takeaway.
+ * `description` stays the short one-liner used elsewhere (sidebar list, the
+ * drill panel's "Key Concept" box); lessonCard is the longer, dedicated copy.
  */
 export const TRAPS = [
   // ── WHITE TRAPS ──────────────────────────────────────────────────
@@ -17,6 +23,12 @@ export const TRAPS = [
     level: 'beginner',
     tags: ['sacrifice', 'italian', 'attack', 'fork'],
     isMate: false,
+    lessonCard: {
+      lesson: "A well-timed sacrifice can be worth far more than the material it costs — the Fried Liver trades a knight for pawns and a king stuck in the centre.",
+      lookFor: "Black's king still on e8 with no ...d6 played, and the queen and rook eyeing the open e- and f-files.",
+      goal: "Find the knight sacrifice that drags Black's king into the open, then keep it there.",
+      takeaway: "Material is only part of the equation — king safety and piece activity can outweigh a whole piece.",
+    },
   },
   {
     id: 'scholars-mate',
@@ -29,6 +41,12 @@ export const TRAPS = [
     level: 'beginner',
     tags: ['fast', 'beginner', 'checkmate'],
     isMate: true,
+    lessonCard: {
+      lesson: "The fastest checkmate in chess punishes a beginner's most natural-looking moves — an undeveloped king's knight leaves f7 completely unguarded.",
+      lookFor: "No ...g6 or ...Nf6 played to cover the diagonal into f7.",
+      goal: "Spot the double attack on f7 and deliver mate before Black can defend it.",
+      takeaway: "Always ask what your opponent's queen or bishop is actually threatening — f7/f2 is the most fragile square on the board early on.",
+    },
   },
   {
     id: 'legal-trap',
@@ -41,6 +59,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['queen sacrifice', 'smothered mate', 'legal'],
     isMate: true,
+    lessonCard: {
+      lesson: "Legal's Trap shows that even a queen can be sacrificed if it buys a forced mating net — Black's own pieces box the king in.",
+      lookFor: "Black pinning the knight with ...Bg4 while the e5-pawn is only defended once.",
+      goal: "Ignore the pin, take the material it's guarding, and find the moves that deliver smothered mate.",
+      takeaway: "A pin only works if the pinned piece is actually needed — check what happens if you simply ignore it.",
+    },
   },
   {
     id: 'budapest-white',
@@ -53,6 +77,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['budapest', 'gambit', 'counter'],
     isMate: false,
+    lessonCard: {
+      lesson: "Gambits offer a pawn for time — the Budapest's compensation disappears the moment White finds the right sequence to win it back with interest.",
+      lookFor: "Black's queen recapturing on e5 before development is complete, exposed to a knight fork.",
+      goal: "Work out the move order that wins the e5-pawn back with an extra tempo on Black's queen.",
+      takeaway: "A gambit's compensation is temporary — neutralise the idea behind it and the extra pawn reverts to you.",
+    },
   },
   {
     id: 'london-trap',
@@ -65,6 +95,12 @@ export const TRAPS = [
     level: 'beginner',
     tags: ['london', 'solid', 'system'],
     isMate: false,
+    lessonCard: {
+      lesson: "Even the quietest, most 'boring' opening systems hide sharp tactical tricks against an inaccurate move order.",
+      lookFor: "An early ...Ne4 hitting the bishop on g3 instead of a safer developing move.",
+      goal: "Find the recapture that leaves Black's knight embarrassed and hands White the bishop pair.",
+      takeaway: "Don't judge a line's danger by how solid it looks — quiet openings can still punish careless piece placement.",
+    },
   },
   {
     id: 'ponziani-trap',
@@ -77,6 +113,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['ponziani', 'fork', 'material'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Ponziani looks slow, but Black's natural-looking queen recapture in the centre walks straight into a developing fork.",
+      lookFor: "Black's queen sitting undefended in the centre with White's knight and bishop both eyeing it.",
+      goal: "Find the developing move that attacks the queen and wins material by force.",
+      takeaway: "Recapturing 'the obvious way' isn't always safe — check where your queen lands before you play it.",
+    },
   },
   {
     id: 'halosar-trap',
@@ -89,6 +131,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['blackmar-diemer', 'gambit', 'sacrifice'],
     isMate: false,
+    lessonCard: {
+      lesson: "Gambit players thrive on one specific mistake — here it's Black playing ...e6 instead of consolidating the extra pawn first.",
+      lookFor: "Black's ...e6 move blocking the bishop and leaving d5 only guarded by the knight on f6.",
+      goal: "Find the knight leap into d5 that exploits the newly weakened square.",
+      takeaway: "In gambit lines, the winning move is almost always tied to one specific defensive slip — learn to recognise it.",
+    },
   },
   {
     id: 'petrov-trap',
@@ -101,6 +149,12 @@ export const TRAPS = [
     level: 'beginner',
     tags: ['petrov', 'beginner', 'material'],
     isMate: false,
+    lessonCard: {
+      lesson: "One of the first 'don't do this' lessons every beginner learns — capturing on e4 too early loses a piece outright.",
+      lookFor: "Black's knight on e4 with no ...d6 played to prepare the recapture safely.",
+      goal: "Find the queen manoeuvre that wins the knight back with an extra piece.",
+      takeaway: "Undefended pieces in the centre are targets — always check what's actually protecting a piece before relying on symmetry.",
+    },
   },
   {
     id: 'wayward-queen-trap',
@@ -113,6 +167,12 @@ export const TRAPS = [
     level: 'beginner',
     tags: ['wayward queen', 'parham', 'checkmate', 'beginner'],
     isMate: true,
+    lessonCard: {
+      lesson: "An early queen sortie is usually bad practice — but if your opponent blocks their own defence with ...Nd4, it can end the game on the spot.",
+      lookFor: "Black playing ...Nd4 instead of ...Nf6, leaving the f7 square completely unguarded.",
+      goal: "Spot the mating square and deliver checkmate before Black can cover it.",
+      takeaway: "Early queen moves are risky for both sides — punishing one requires recognising the exact moment the defence collapses.",
+    },
   },
   {
     id: 'danish-gambit-trap',
@@ -125,6 +185,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['danish gambit', 'sacrifice', 'queen win'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Danish gives up two pawns for a monster development lead — Black's natural-looking central break can lose the game outright.",
+      lookFor: "Black playing ...d5 to challenge the centre instead of returning a pawn to catch up on development.",
+      goal: "Find the bishop sacrifice on f7 that drags the king out, then the follow-up that wins the queen.",
+      takeaway: "When you're down material for development, look for forcing moves that convert your lead before your opponent castles.",
+    },
   },
   {
     id: 'monticelli-trap',
@@ -137,6 +203,48 @@ export const TRAPS = [
     level: 'advanced',
     tags: ['bogo-indian', 'nimzo', 'queenside fianchetto', 'exchange win'],
     isMate: false,
+    lessonCard: {
+      lesson: "Even at master level, greed can be punished — Monticelli–Prokeš (1926) shows a strong player falling for a fork that wins material.",
+      lookFor: "Black's knight capturing on c3 instead of retreating, leaving both h7 and b7 loosely covered.",
+      goal: "Find the knight leap that forks the mating threat on h7 and the bishop on b7.",
+      takeaway: "A tactic doesn't need to be flashy — a simple double attack is enough to win material against players of any strength.",
+    },
+  },
+  {
+    id: 'leonhardt-gambit',
+    name: 'Leonhardt Gambit',
+    color: 'white',
+    opening: 'Scandinavian Defence',
+    description: "White sacrifices a pawn, then a bishop, to drag Black's king onto the same rank as the queen — a check that's also a skewer",
+    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    moves: ['e4', 'd5', 'exd5', 'Qxd5', 'Nc3', 'Qa5', 'b4', 'Qxb4', 'Rb1', 'Qa5', 'Bc4', 'c6', 'Bxf7+', 'Kxf7', 'Qh5+', 'g6', 'Qxa5'],
+    level: 'intermediate',
+    tags: ['scandinavian', 'leonhardt gambit', 'skewer', 'queen win'],
+    isMate: false,
+    lessonCard: {
+      lesson: "The Leonhardt Gambit's real point isn't the opening pawn sacrifice — it's a later move that gives check and attacks the queen at the same time, so Black can't deal with both in one move.",
+      lookFor: "Black's queen sitting on a5 while White's queen is about to land on h5 — both on the same open rank, with Black's king about to be dragged to f7 by a bishop sacrifice.",
+      goal: "Find the bishop sacrifice that drags the king to f7, then the check that also skewers the queen along the fifth rank.",
+      takeaway: "A check that also attacks something else is a fork in disguise — the defender can only ever answer the check, never both threats at once.",
+    },
+  },
+  {
+    id: 'magnus-smith-trap',
+    name: 'Magnus Smith Trap',
+    color: 'white',
+    opening: 'Sicilian Defence',
+    description: "Black's natural-looking 6...g6 in the Sozin Sicilian lets White win the queen with a central pawn push and a bishop sacrifice",
+    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    moves: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'Nc6', 'Bc4', 'g6', 'Nxc6', 'bxc6', 'e5', 'dxe5', 'Bxf7+', 'Kxf7', 'Qxd8'],
+    level: 'intermediate',
+    tags: ['sicilian', 'sozin', 'magnus smith', 'queen win'],
+    isMate: false,
+    lessonCard: {
+      lesson: "The Magnus Smith Trap shows how a single central pawn push can punish a fianchetto played a move too early — Black's own king ends up trapping their queen.",
+      lookFor: "Black's bishop heading to g7 with ...g6 while White's bishop on c4 still aims straight at f7, and the center still open.",
+      goal: "Push the e-pawn to rip the center open, then find the bishop sacrifice that forces Black's king to block its own queen's escape.",
+      takeaway: "A fianchetto played before the center is settled can open more lines than it closes — always check what your center pawns allow before committing to ...g6.",
+    },
   },
 
   // ── BLACK TRAPS ──────────────────────────────────────────────────
@@ -151,6 +259,12 @@ export const TRAPS = [
     level: 'advanced',
     tags: ['stafford', 'petrov', 'theory'],
     isMate: false,
+    lessonCard: {
+      lesson: "Not every gambit needs to be refuted with a sharp tactic — sometimes the safest 'refutation' is simply declining the trick and transposing into a comfortable position.",
+      lookFor: "Black's Stafford Gambit setup (...d6 and an early ...Nxe4) baiting White into a greedy pawn grab.",
+      goal: "Avoid the tactical trap altogether and steer the game into calm, well-known Petrov theory.",
+      takeaway: "Recognising a trap is only half the job — knowing the safe alternative is what actually lets you avoid it.",
+    },
   },
   {
     id: 'traxler',
@@ -163,6 +277,12 @@ export const TRAPS = [
     level: 'advanced',
     tags: ['traxler', 'sacrifice', 'counterattack', 'italian'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Traxler is Black's answer to White's own Fried-Liver-style aggression — offering a bishop to rip open the king before White can consolidate.",
+      lookFor: "White grabbing the f7-pawn with the knight instead of retreating, ignoring Black's counterattack in the centre.",
+      goal: "Sacrifice the bishop on f2 and find the follow-up checks that expose White's king in the open.",
+      takeaway: "When your opponent goes all-in on an attack, look for a counter-sacrifice that turns their own king into the target instead.",
+    },
   },
   {
     id: 'budapest-black',
@@ -175,6 +295,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['budapest', 'gambit', 'checkmate', 'smothered'],
     isMate: true,
+    lessonCard: {
+      lesson: "The Kieninger Trap punishes White for being too greedy in taking back the bishop check — smothered mate is lurking two moves later.",
+      lookFor: "White's pawn grabbing on b4 instead of a safer developing move, leaving the back rank vulnerable.",
+      goal: "Find Black's knight move that delivers a forced smothered checkmate.",
+      takeaway: "Smothered mate patterns often hide behind seemingly safe pawn captures — always check your own king's escape squares before grabbing material.",
+    },
   },
   {
     id: 'caro-kann-trap',
@@ -187,6 +313,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['caro-kann', 'solid', 'counter'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Caro-Kann rewards patience — White's natural-looking developing move right after the knight trade hands Black a free tempo and target.",
+      lookFor: "White developing the bishop to c4 before checking what it's actually attacking.",
+      goal: "Find the developing move that both defends and counterattacks White's bishop.",
+      takeaway: "Solid openings don't need sharp tactics to punish inaccuracy — sometimes a simple developing move with tempo is enough.",
+    },
   },
   {
     id: 'sicilian-trap',
@@ -199,6 +331,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['sicilian', 'defence', 'counter'],
     isMate: false,
+    lessonCard: {
+      lesson: "Sicilian players are trained to grab the material a gambit offers and simply hold on with accurate development.",
+      lookFor: "White offering an early pawn for open lines — check whether the compensation is really there before declining it.",
+      goal: "Accept the material and find the precise developing moves that neutralise White's attacking try.",
+      takeaway: "Not every gambit is sound — sometimes the correct response really is 'take the pawn and defend accurately.'",
+    },
   },
   {
     id: 'blackburne-shilling',
@@ -211,6 +349,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['blackburne', 'gambit', 'checkmate', 'italian'],
     isMate: true,
+    lessonCard: {
+      lesson: "The Shilling Gambit baits a greedy capture with an offside-looking knight move, then punishes it with a forced mating sequence.",
+      lookFor: "White grabbing the free e5-pawn with the knight instead of questioning why Black offered it.",
+      goal: "Find the queen sortie to g5 and the follow-up combination that forces checkmate.",
+      takeaway: "A move that looks like a blunder (...Nd4) can be a deliberate trap — always ask why your opponent offered the material before taking it.",
+    },
   },
   {
     id: 'englund-gambit-trick',
@@ -223,6 +367,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['englund', 'gambit', 'material'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Englund is a dubious gambit objectively, but one specific developing move by White (bringing the bishop to f4 too early) hands the pawn straight back with interest.",
+      lookFor: "White developing the bishop to f4 before covering the queen check on b4.",
+      goal: "Find the check that wins the b2-pawn and disrupts White's queenside.",
+      takeaway: "Even objectively bad openings can have a single sharp trick worth knowing — just don't expect it to work against accurate play.",
+    },
   },
   {
     id: 'fishing-pole-trap',
@@ -235,6 +385,12 @@ export const TRAPS = [
     level: 'advanced',
     tags: ['fishing pole', 'ruy lopez', 'sacrifice', 'attack'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Fishing Pole dangles a knight as bait — if White grabs it, the h-file becomes a weapon aimed straight at the king.",
+      lookFor: "White capturing on g4 with the h-pawn, opening the h-file with the king still on g1.",
+      goal: "Find the follow-up that opens lines and wins material via the exposed king.",
+      takeaway: "Opening a file next to your own king is dangerous even when it looks like you're just winning a pawn — always check what's aimed down it.",
+    },
   },
   {
     id: 'elephant-trap',
@@ -247,6 +403,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['queens gambit', 'piece trap', 'material'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Elephant Trap punishes White for an automatic-looking recapture in the centre — the point is a queen-winning combination two moves later.",
+      lookFor: "White capturing on d5 with the knight instead of the bishop, walking into a discovered attack.",
+      goal: "Find the recapture and bishop check that wins White's queen outright.",
+      takeaway: "When two pieces can make the same recapture, check which one actually keeps you safe — the 'natural' choice isn't always correct.",
+    },
   },
   {
     id: 'noahs-ark-trap',
@@ -259,6 +421,12 @@ export const TRAPS = [
     level: 'advanced',
     tags: ['ruy lopez', 'bishop trap', 'positional', 'theory'],
     isMate: false,
+    lessonCard: {
+      lesson: "Noah's Ark is a purely positional trap — no sacrifice, no tactics, just Black's queenside pawns slowly boxing in White's bishop until it has nowhere left to go.",
+      lookFor: "White's bishop retreating to b3 with Black's a- and b-pawns already advanced, and no safe square left along the diagonal.",
+      goal: "Push the pawn chain forward until the bishop is trapped with no legal way to escape.",
+      takeaway: "Not every trap needs a tactic — sometimes a slow strategic squeeze wins a whole piece just as surely as a combination.",
+    },
   },
   {
     id: 'lasker-trap',
@@ -271,6 +439,30 @@ export const TRAPS = [
     level: 'advanced',
     tags: ['albin countergambit', 'underpromotion', 'skewer', 'queens gambit'],
     isMate: false,
+    lessonCard: {
+      lesson: "The Lasker Trap hinges on an underpromotion — Black promotes to a knight instead of a queen specifically because it comes with check.",
+      lookFor: "White capturing the bishop on b4 instead of dealing with the advanced d-pawn and the check it's about to deliver.",
+      goal: "Find the underpromoting knight check, then the bishop skewer that wins White's queen.",
+      takeaway: "Promotion doesn't always mean 'always pick a queen' — the right underpromotion can be the difference between a good move and a winning one.",
+    },
+  },
+  {
+    id: 'siberian-trap',
+    name: 'Siberian Trap',
+    color: 'black',
+    opening: 'Sicilian Defence',
+    description: "White's premature 9.h3?? in the Smith-Morra Gambit, ignoring Black's other knight, walks into a forced mate",
+    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    moves: ['e4', 'c5', 'd4', 'cxd4', 'c3', 'dxc3', 'Nxc3', 'Nc6', 'Nf3', 'e6', 'Bc4', 'Qc7', 'O-O', 'Nf6', 'Qe2', 'Ng4', 'h3', 'Nd4', 'Nxd4', 'Qh2#'],
+    level: 'intermediate',
+    tags: ['sicilian', 'smith-morra', 'siberian trap', 'checkmate'],
+    isMate: true,
+    lessonCard: {
+      lesson: "The Siberian Trap punishes White for treating the g4-knight as the only threat — while White deals with it, Black's other knight delivers the real blow.",
+      lookFor: "White attacking the knight on g4 with h3 while completely ignoring what Black's other knight, still on c6, can jump to.",
+      goal: "Ignore the attacked knight, jump the other one to d4, and find the forced mate that follows however White responds.",
+      takeaway: "Not every attacked piece needs saving — if letting it go wins by force, let it go.",
+    },
   },
   // ── MATES ────────────────────────────────────────────────────────
   {
@@ -284,6 +476,12 @@ export const TRAPS = [
     level: 'beginner',
     tags: ['mate pattern', 'back rank', 'rook'],
     isMate: true,
+    lessonCard: {
+      lesson: "The back-rank mate is the single most common mating pattern in practical games — a king trapped behind its own pawns with no escape square.",
+      lookFor: "An enemy king on the back rank with its own pawns still on the second/seventh rank, and an open file for your rook or queen.",
+      goal: "Find the rook move that delivers checkmate along the back rank.",
+      takeaway: "Always keep an escape square for your own king — this exact pattern ends games at every level, including grandmaster ones.",
+    },
   },
   {
     id: 'smothered-mate',
@@ -296,6 +494,12 @@ export const TRAPS = [
     level: 'advanced',
     tags: ['smothered', 'knight', 'sacrifice', 'pattern'],
     isMate: true,
+    lessonCard: {
+      lesson: "Smothered mate turns a king's own defenders into its executioners — surrounded by its own pieces, it has nowhere to move even when checked by a single knight.",
+      lookFor: "An enemy king boxed in entirely by its own pieces, with a knight able to check it from a protected square.",
+      goal: "Find the knight move that delivers mate with no legal king move or block available.",
+      takeaway: "A knight check can't be blocked — that makes it uniquely dangerous against a king with no flight squares left.",
+    },
   },
   {
     id: 'anastasias-mate',
@@ -308,6 +512,12 @@ export const TRAPS = [
     level: 'intermediate',
     tags: ['mate pattern', 'knight', 'rook', 'anastasia'],
     isMate: true,
+    lessonCard: {
+      lesson: "Anastasia's Mate combines a knight cutting off escape squares with a rook delivering mate along the rank or file it guards.",
+      lookFor: "An enemy king pushed to the edge of the board with a knight already covering its escape squares.",
+      goal: "Find the rook move onto the open file that delivers checkmate.",
+      takeaway: "Recognising named mating patterns like this one lets you calculate forcing sequences faster — you're pattern-matching, not searching from scratch.",
+    },
   },
 ]
 
@@ -318,5 +528,10 @@ export const getTrapById = (id) => TRAPS.find(t => t.id === id) || null
 export const getTrapsByColor = (color) => TRAPS.filter(t => t.color === color)
 
 export const getMates = () => TRAPS.filter(t => t.isMate)
+
+// 1-based position in the library, used as the "Trap Training #N" ordinal on
+// the lesson-card view — stable regardless of the sidebar's active
+// colour/search filters, since it indexes the full TRAPS array.
+export const getTrapOrdinal = (id) => TRAPS.findIndex(t => t.id === id) + 1
 
 export const TOTAL_TRAPS = TRAPS.length

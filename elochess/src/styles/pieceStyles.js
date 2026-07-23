@@ -7,6 +7,7 @@
 
 export const PIECE_STYLES = [
   { id: 'classic', name: 'Classic', description: 'Plain glyphs — KnightPath’s default look.' },
+  { id: 'solid', name: 'Solid', description: 'Flat, filled silhouettes — no outline on white.' },
   { id: 'fantasy', name: 'Fantasy', description: 'Ornate ivory/ebony carved-line artwork.' },
 ]
 

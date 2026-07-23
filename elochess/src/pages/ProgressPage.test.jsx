@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import ProgressPage from './ProgressPage'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
+import { TOTAL_TRAPS } from '../data/traps'
 
 describe('ProgressPage', () => {
   beforeEach(() => {
@@ -18,7 +19,7 @@ describe('ProgressPage', () => {
   it('shows trap mastery as "known / total"', () => {
     render(<ProgressPage />)
     const { knownCount } = useAppStore.getState().progress
-    expect(screen.getByText(`${knownCount} / 25 known`)).toBeInTheDocument()
+    expect(screen.getByText(`${knownCount} / ${TOTAL_TRAPS} known`)).toBeInTheDocument()
   })
 
   it('renders all 12 badges, unearned ones dimmed', () => {

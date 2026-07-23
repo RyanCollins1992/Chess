@@ -173,4 +173,226 @@ describe('OpeningsPage', () => {
     expect(srsEngine.isEnrolled('fried-liver')).toBe(false)
     expect(screen.getByText('+ Add to Spaced Review')).toBeInTheDocument()
   })
+
+  describe('repertoire line practice mode (progressive hints)', () => {
+    // Italian Game: Giuoco Piano, 15 plies, group color 'white' — practice
+    // starts on move 1 (e4) directly, no black-side auto-play priming.
+    const LINE_NAME = 'Italian Game: Giuoco Piano'
+    const PLY_COUNT = 15
+
+    function openLineAndStartPractice() {
+      fireEvent.click(screen.getByText(LINE_NAME))
+      for (let i = 0; i < PLY_COUNT; i++) fireEvent.click(screen.getByText('Next ▶'))
+      fireEvent.click(screen.getByText('Try it yourself →'))
+    }
+
+    it('reaching the end of Next shows the "try it yourself" prompt, not before', () => {
+      render(<OpeningsPage />)
+      fireEvent.click(screen.getByText(LINE_NAME))
+      expect(screen.queryByText('Now your turn — try this out.')).not.toBeInTheDocument()
+
+      for (let i = 0; i < PLY_COUNT; i++) fireEvent.click(screen.getByText('Next ▶'))
+      expect(screen.getByText('Now your turn — try this out.')).toBeInTheDocument()
+    })
+
+    it('starting practice shows the practice board at move 1, no mistakes yet', () => {
+      render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      expect(screen.getByText('🎯 Practice')).toBeInTheDocument()
+      expect(screen.getByText('Move 1 of 8')).toBeInTheDocument()
+      expect(screen.queryByText(/miss/)).not.toBeInTheDocument()
+    })
+
+    it('1st wrong move: shows "Incorrect", counts one mistake, no square hint yet', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      // d2-d3 is a legal move but not the line's scripted e4.
+      click(container, 'd2')
+      click(container, 'd3')
+
+      expect(useAppStore.getState().toast?.message).toBe('Incorrect — try again')
+      expect(screen.getByText('(1 miss on this move)')).toBeInTheDocument()
+      // Still move 1 — the wrong move must not have advanced the line.
+      expect(screen.getByText('Move 1 of 8')).toBeInTheDocument()
+      // No hint yet: e2 (the correct piece to move) has no highlight style.
+      const e2 = container.querySelector('[data-square="e2"]')
+      expect(e2.innerHTML).not.toMatch(/255, 215, 0/)
+    })
+
+    it('2nd wrong move (same expected move): highlights the correct piece, no arrow yet', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      click(container, 'd2'); click(container, 'd3') // mistake 1
+      click(container, 'd2'); click(container, 'd3') // mistake 2
+
+      expect(screen.getByText('(2 misses on this move)')).toBeInTheDocument()
+      const e2 = container.querySelector('[data-square="e2"]')
+      expect(e2.innerHTML).toMatch(/255, 215, 0/) // gold highlight on the correct source square
+    })
+
+    it('3rd wrong move: keeps the square hint and adds an arrow, still lets the user move', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      click(container, 'd2'); click(container, 'd3') // mistake 1
+      click(container, 'd2'); click(container, 'd3') // mistake 2
+      click(container, 'd2'); click(container, 'd3') // mistake 3
+
+      expect(screen.getByText('(3 misses on this move)')).toBeInTheDocument()
+      const e2 = container.querySelector('[data-square="e2"]')
+      expect(e2.innerHTML).toMatch(/255, 215, 0/) // hint square hint persists
+      // An arrow layer should now be present on the board.
+      expect(container.querySelector('svg')).toBeInTheDocument()
+    })
+
+    it('4th wrong move: resets the whole line back to move 1 and clears all hints', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      click(container, 'd2'); click(container, 'd3') // mistake 1
+      click(container, 'd2'); click(container, 'd3') // mistake 2
+      click(container, 'd2'); click(container, 'd3') // mistake 3
+      click(container, 'd2'); click(container, 'd3') // mistake 4 -> reset
+
+      expect(useAppStore.getState().toast?.message).toBe('❌ Reset — starting the line over')
+      expect(screen.getByText('Move 1 of 8')).toBeInTheDocument()
+      expect(screen.queryByText(/miss/)).not.toBeInTheDocument()
+      const e2 = container.querySelector('[data-square="e2"]')
+      expect(e2.innerHTML).not.toMatch(/255, 215, 0/) // hint cleared too
+    })
+
+    it('a correct move resets the mistake counter and clears hints for the next move', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      click(container, 'd2'); click(container, 'd3') // mistake 1
+      click(container, 'd2'); click(container, 'd3') // mistake 2 (hint now showing on e2)
+
+      click(container, 'e2'); click(container, 'e4') // the actual correct move
+
+      // The move-pair counter only advances once BOTH plies of a pair are
+      // played (same convention TrapStudy's own status line uses) — after
+      // just White's e4, it correctly still reads "Move 1 of 8" (Black's
+      // reply is still pending). What must be true is that the mistake
+      // count/hint for the ply just played are gone.
+      expect(screen.getByText('Move 1 of 8')).toBeInTheDocument()
+      expect(screen.queryByText(/miss/)).not.toBeInTheDocument()
+      // Old hint (on e2, last move's source square) must not still be shown.
+      const e2 = container.querySelector('[data-square="e2"]')
+      expect(e2.innerHTML).not.toMatch(/255, 215, 0/)
+
+      // Playing Black's reply too should now advance the pair counter,
+      // confirming the correct move genuinely progressed the line rather
+      // than merely resetting the mistake count without advancing.
+      click(container, 'e7'); click(container, 'e5')
+      expect(screen.getByText('Move 2 of 8')).toBeInTheDocument()
+    })
+
+    it('mistakes are tracked per expected move, not globally — 3 mistakes on 3 different plies never trigger a reset', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      // One mistake (always on White's turn, so it's unambiguously legal
+      // regardless of board state — h2-h3 is legal at every point in this
+      // sequence), then the correct move, for each of White's first 3 plies.
+      // 3 total mistakes across the session, but never more than 1 on any
+      // single expected move — a global (non-per-move) counter would have
+      // reset after the 3rd wrong attempt if the bug were present; a correct
+      // per-move counter must not have reset anything.
+      click(container, 'h2'); click(container, 'h3') // mistake on move 1 (expected e4)
+      click(container, 'e2'); click(container, 'e4') // correct
+      click(container, 'e7'); click(container, 'e5') // Black's reply, no mistake here
+      click(container, 'h2'); click(container, 'h3') // mistake on move 2 (expected Nf3)
+      click(container, 'g1'); click(container, 'f3') // correct
+      click(container, 'b8'); click(container, 'c6') // Black's reply, no mistake here
+      click(container, 'h2'); click(container, 'h3') // mistake on move 3 (expected Bc4)
+      click(container, 'f1'); click(container, 'c4') // correct
+
+      expect(screen.getByText('Move 3 of 8')).toBeInTheDocument()
+      expect(useAppStore.getState().toast?.message).not.toBe('❌ Reset — starting the line over')
+    })
+
+    it('completing the full line from memory shows the Complete state', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      const chess = new Chess()
+      const line = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'c3', 'Nf6', 'd3', 'd6', 'O-O', 'O-O', 'Bb3', 'a6', 'Nbd2']
+      for (const san of line) {
+        const move = chess.move(san)
+        click(container, move.from)
+        click(container, move.to)
+      }
+
+      expect(screen.getByText('✅ Complete')).toBeInTheDocument()
+      expect(screen.getByText('🎉 Nailed it from memory!')).toBeInTheDocument()
+    })
+
+    it('Restart during practice goes back to move 1', () => {
+      const { container } = render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      click(container, 'e2'); click(container, 'e4') // correct move 1 (White)
+      click(container, 'e7'); click(container, 'e5') // correct move 1 (Black) — completes the pair
+      expect(screen.getByText('Move 2 of 8')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByText('↺ Restart'))
+      expect(screen.getByText('Move 1 of 8')).toBeInTheDocument()
+    })
+
+    it('Back to Browse returns to the browse view without losing the line', () => {
+      render(<OpeningsPage />)
+      openLineAndStartPractice()
+
+      fireEvent.click(screen.getByText('Back to Browse'))
+      expect(screen.getByText('📖 Opening Theory')).toBeInTheDocument()
+    })
+
+    // Fake timers so the auto-played opponent reply (a real setTimeout) is
+    // deterministic instead of racing a fixed real-clock delay — same
+    // rationale as the Trap-drill auto-play tests above.
+    describe('the computer plays the other color automatically', () => {
+      beforeEach(() => { vi.useFakeTimers() })
+      afterEach(() => { vi.useRealTimers() })
+
+      it('a white-repertoire line auto-plays Black\'s reply — the user never touches Black\'s pieces', () => {
+        const { container } = render(<OpeningsPage />)
+        openLineAndStartPractice()
+
+        click(container, 'e2'); click(container, 'e4') // the user's own move only
+        expect(screen.getByText('Move 1 of 8')).toBeInTheDocument() // pair not done yet
+
+        act(() => { vi.advanceTimersByTime(600) }) // let Black's auto-played e5 land
+        expect(screen.getByText('Move 2 of 8')).toBeInTheDocument()
+        expect(screen.queryByText(/miss/)).not.toBeInTheDocument() // no mistake was possible — the user never moved
+      })
+
+      it('a black-repertoire line auto-plays White\'s opening move before the user does anything', () => {
+        const { container } = render(<OpeningsPage />)
+        fireEvent.click(screen.getByText('Black'))
+        fireEvent.click(screen.getByText('Philidor Defence'))
+        for (let i = 0; i < 16; i++) fireEvent.click(screen.getByText('Next ▶'))
+        fireEvent.click(screen.getByText('Try it yourself →'))
+
+        // White's e4 must already be on the board with no user input at all —
+        // e2 empty, e4 holds a white pawn.
+        expect(container.querySelector('[data-square="e2"] [data-piece]')).not.toBeInTheDocument()
+        expect(container.querySelector('[data-square="e4"] [data-piece="wP"]')).toBeInTheDocument()
+
+        // The user only ever plays Black's replies from here. If White's Nf3
+        // hadn't actually auto-played internally, it would still be White's
+        // turn and this d7-d6 click would silently fail to register at all
+        // (clicking a piece on the wrong side to move is a no-op — see the
+        // click-to-move mechanics covered elsewhere in this file) — so
+        // reaching "Move 3 of 8" is itself proof the auto-play landed.
+        click(container, 'e7'); click(container, 'e5')
+        act(() => { vi.advanceTimersByTime(600) }) // White's Nf3 auto-plays
+        click(container, 'd7'); click(container, 'd6')
+        expect(screen.getByText('Move 3 of 8')).toBeInTheDocument()
+      })
+    })
+  })
 })

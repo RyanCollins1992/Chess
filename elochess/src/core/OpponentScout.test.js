@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { openingFamily, openingsMatch, findWeakSpots, recommendOpenings, allOpenings } from './OpponentScout'
 
-function game({ color, result, opening }) {
-  return { color, result, opening }
+function game({ color, result, opening, sanMoves }) {
+  return { color, result, opening, sanMoves }
 }
 
 describe('openingFamily', () => {
@@ -149,6 +149,45 @@ describe('recommendOpenings', () => {
       ...lossTrio('Black', 'Caro-Kann Defence: Classical'),
     ]
     expect(recommendOpenings(games, { max: 2 })).toHaveLength(2)
+  })
+})
+
+describe('opening identification from actual moves (resolveOpeningName)', () => {
+  // "Amar Opening: Gambit" — a real ecoDatabase.js entry, not in TRAPS or
+  // OPENING_REPERTOIRE, so a match here proves the broader ECO database is
+  // actually being consulted, not just the app's own curated lines.
+  const AMAR_GAMBIT = ['Nh3', 'd5', 'g3', 'e5', 'f4', 'Bxh3', 'Bxh3', 'exf4']
+
+  it('identifies the opening from sanMoves even when the Chess.com opening field is garbled', () => {
+    const games = [
+      game({ color: 'White', result: 'Loss', opening: 'some-eco-url-slug-3.e3-Nf6-4.c4', sanMoves: AMAR_GAMBIT }),
+      game({ color: 'White', result: 'Loss', opening: 'some-eco-url-slug-3.e3-Nf6-4.c4', sanMoves: AMAR_GAMBIT }),
+      game({ color: 'White', result: 'Loss', opening: 'some-eco-url-slug-3.e3-Nf6-4.c4', sanMoves: AMAR_GAMBIT }),
+    ]
+    const spots = findWeakSpots(games)
+    expect(spots).toHaveLength(1)
+    expect(spots[0].openingName).toBe('Amar Opening')
+  })
+
+  it('falls back to the raw opening field when the moves match nothing known', () => {
+    const games = [
+      game({ color: 'White', result: 'Loss', opening: 'Some Rare Line', sanMoves: ['a4', 'a5', 'a3'] }),
+      game({ color: 'White', result: 'Loss', opening: 'Some Rare Line', sanMoves: ['a4', 'a5', 'a3'] }),
+      game({ color: 'White', result: 'Loss', opening: 'Some Rare Line', sanMoves: ['a4', 'a5', 'a3'] }),
+    ]
+    const spots = findWeakSpots(games)
+    expect(spots).toHaveLength(1)
+    expect(spots[0].openingName).toBe('Some Rare Line')
+  })
+
+  it('falls back to the raw opening field when sanMoves is absent (older cached data shape)', () => {
+    const games = [
+      game({ color: 'Black', result: 'Loss', opening: 'Italian Game: Giuoco Piano' }),
+      game({ color: 'Black', result: 'Loss', opening: 'Italian Game: Giuoco Piano' }),
+      game({ color: 'Black', result: 'Loss', opening: 'Italian Game: Giuoco Piano' }),
+    ]
+    const spots = findWeakSpots(games)
+    expect(spots[0].openingName).toBe('Italian Game')
   })
 })
 

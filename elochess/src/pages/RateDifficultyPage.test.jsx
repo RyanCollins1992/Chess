@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import RateDifficultyPage from './RateDifficultyPage'
 import { useAppStore } from '../store/useAppStore'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
+import { TOTAL_TRAPS } from '../data/traps'
 
 describe('RateDifficultyPage', () => {
   beforeEach(() => {
@@ -11,7 +12,7 @@ describe('RateDifficultyPage', () => {
 
   it('shows 0 rated out of the full trap count initially', () => {
     render(<RateDifficultyPage />)
-    expect(screen.getByText('0/25')).toBeInTheDocument()
+    expect(screen.getByText(`0/${TOTAL_TRAPS}`)).toBeInTheDocument()
   })
 
   it('groups traps into White/Black/Mates sections', () => {
@@ -28,7 +29,7 @@ describe('RateDifficultyPage', () => {
     fireEvent.click(stars[1]) // 2nd star = rating 2 (Medium)
 
     expect(useAppStore.getState().difficultyRatings['fried-liver']).toBe(2)
-    expect(screen.getByText('1/25')).toBeInTheDocument()
+    expect(screen.getByText(`1/${TOTAL_TRAPS}`)).toBeInTheDocument()
   })
 
   // srsEngine.setRating() is a no-op if the trap isn't enrolled yet

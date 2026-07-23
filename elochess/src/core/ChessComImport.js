@@ -40,8 +40,21 @@ export function parseGame(g, myUsername) {
   const tc     = g.time_control || header('TimeControl') || '?'
   const tcLabel = formatTimeControl(tc)
 
-  // Move count
-  const movesOnly = pgn.replace(/\[[^\]]+\]/g, '').replace(/\{[^}]+\}/g, '').replace(/\d+\./g, '').trim()
+  // Move list + count. Order matters: Chess.com's real move text is
+  // annotated with per-move clock comments containing their own brackets
+  // ("1. e4 {[%clk 0:03:00]} 1... e6 {[%clk 0:03:00]} 2. Nf3 ..."), so the
+  // `{...}` comments must be stripped BEFORE the `[...]` header-tag regex
+  // runs — otherwise that regex reaches inside the comments and eats just
+  // the "[%clk ...]" bracket, leaving an empty, no-longer-strippable "{}"
+  // token behind for every single ply. Black's move number is also written
+  // with three dots ("1...", not "1."), so the move-number strip needs
+  // `\.+` (one or more dots), not a single literal `.` — otherwise it only
+  // consumes the first dot and leaves a stray ".." token per full move.
+  const movesOnly = pgn
+    .replace(/\{[^}]+\}/g, '')
+    .replace(/\[[^\]]+\]/g, '')
+    .replace(/\d+\.+/g, '')
+    .trim()
   const moveTokens = movesOnly.split(/\s+/).filter(t => t && !t.match(/^(1-0|0-1|1\/2-1\/2|\*)$/))
   const moveCount  = Math.ceil(moveTokens.length / 2)
 
@@ -56,6 +69,7 @@ export function parseGame(g, myUsername) {
     opponentRating: oppRating || '?',
     myRating:       myRating || '?',
     opening,
+    sanMoves:       moveTokens,
     timeControl:    tcLabel,
     date,
     moves:          moveCount,

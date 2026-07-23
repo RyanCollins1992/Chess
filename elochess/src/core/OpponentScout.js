@@ -12,21 +12,22 @@
  * when no trap matches.
  */
 import { TRAPS } from '../data/traps'
+import { identifyOpening } from './openingIdentifier'
 
 const MIN_SAMPLE = 3 // 2/2 (100%) is indistinguishable from a coin flip; require a real repeated pattern
 const STOPWORDS = new Set(['the', 'of', 'and', 'game', 'defense', 'defence', 'opening', 'attack', 'variation', 'system', 'gambit'])
 
 // "Italian Game: Giuoco Piano, Main Line" → "Italian Game" — the first
-// comma/colon-delimited segment is Chess.com's own opening "family" name,
-// when the game's PGN has a clean [Opening] tag.
+// comma/colon-delimited segment is the opening's "family" name.
 //
-// Most games from the Chess.com API don't have that tag at all, though —
-// parseGame() falls back to the ECOUrl slug, which appends the actual move
-// list onto the name ("Queens Pawn Opening Krause Variation 3.e3 Nf6 4.c4
-// cxd4", or "...7.bxc3 Bd6 8.O-O-O" for a line reached via transposition).
-// Strip from the first such move token onward before the colon/comma split,
-// or family names would end up polluted with raw SAN moves and every game
-// would look like its own unique "family" instead of aggregating.
+// Applied to whichever name resolveOpeningName() produced. When that came
+// from identifyOpening() (the common case — see below) it's already a clean
+// name from the app's own data files. The fallback path — Chess.com's own
+// [Opening] tag, or its ECOUrl slug when that tag is missing, which appends
+// the actual move list onto the name ("Queens Pawn Opening Krause Variation
+// 3.e3 Nf6 4.c4 cxd4", or "...7.bxc3 Bd6 8.O-O-O" for a transposition) —
+// still needs the move-token stripping below, since that raw string can
+// reach here whenever no move-based match was found.
 export function openingFamily(name) {
   if (!name) return ''
   const moveTokenIdx = name.search(/(\s|\.{3})\d+\.[A-Za-z0-9]/)
@@ -52,6 +53,16 @@ export function openingsMatch(trapOpening, openingName) {
   })
 }
 
+// Chess.com's own opening metadata (see openingFamily's comment above) is
+// frequently missing or slug-mangled. Prefer identifying the opening from
+// what was actually played — matched against the app's curated traps/
+// repertoire and its 1,345-line ECO database — and only fall back to the
+// raw Chess.com field when the game's moves don't match anything known
+// (e.g. it ended before reaching any named position).
+function resolveOpeningName(g) {
+  return identifyOpening(g.sanMoves) || g.opening
+}
+
 // Groups games by (color the opponent played, opening family). Every family
 // with at least one game gets a bucket — filtering/sorting for a particular
 // use (worst record vs. most-played) is left to the caller.
@@ -59,7 +70,7 @@ function bucketOpenings(games) {
   const buckets = new Map()
 
   for (const g of games) {
-    const family = openingFamily(g.opening)
+    const family = openingFamily(resolveOpeningName(g))
     if (!family || family === 'Unknown') continue
     const opponentColor = g.color === 'White' ? 'white' : 'black'
     const key = `${opponentColor}|${family.toLowerCase()}`
