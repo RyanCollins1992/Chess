@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Chessboard } from '../components/ui/Chessboard'
 import MoveLedger from '../components/ui/MoveLedger'
 import TrapLessonCard from '../components/ui/TrapLessonCard'
@@ -18,6 +19,13 @@ export default function OpeningsPage() {
   const [selectedLine, setSelectedLine] = useState(null)
   const [prevActiveColor, setPrevActiveColor] = useState(activeColor)
   const [prevSelectedTrap, setPrevSelectedTrap] = useState(selectedTrap)
+  // Collapsed by default: click "Openings"/"Traps" to reveal the level
+  // headers, then click a level to reveal its lines. Each toggle is
+  // independent so any combination can be expanded/minimized at once.
+  const [expandedSections, setExpandedSections] = useState({ openings: false, traps: false })
+  const [expandedLevels, setExpandedLevels] = useState({})
+  const toggleSection = (key) => setExpandedSections(s => ({ ...s, [key]: !s[key] }))
+  const toggleLevel = (key) => setExpandedLevels(s => ({ ...s, [key]: !s[key] }))
 
   const filteredRepertoire = OPENING_REPERTOIRE
     .filter(r => activeColor !== 'mates' ? r.color === activeColor : false)
@@ -78,62 +86,84 @@ export default function OpeningsPage() {
         <div className="flex-1 overflow-y-auto">
           {openingsByLevel.length > 0 && (
             <>
-              <div className="px-4 py-2 text-[10px] font-bold text-muted uppercase tracking-widest border-b border-border bg-bg3/40">
-                Openings
-              </div>
-              {openingsByLevel.map(({ level, lines }) => (
-                <div key={level}>
-                  <div className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border-b border-border/50 ${
-                    level === 'beginner' ? 'text-accent2 bg-accent2/5' :
-                    level === 'intermediate' ? 'text-gold bg-gold/5' :
-                    'text-danger bg-danger/5'
-                  }`}>
-                    {level}
-                  </div>
-                  {lines.map(({ group, ...line }) => (
+              <button
+                onClick={() => toggleSection('openings')}
+                className="w-full flex items-center justify-between px-4 py-2 text-[10px] font-bold text-muted uppercase tracking-widest border-b border-border bg-bg3/40 hover:text-white transition-colors"
+              >
+                <span>Openings</span>
+                {expandedSections.openings ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </button>
+              {expandedSections.openings && openingsByLevel.map(({ level, lines }) => {
+                const levelKey = `openings-${level}`
+                const levelOpen = !!expandedLevels[levelKey]
+                return (
+                  <div key={level}>
                     <button
-                      key={line.name}
-                      onClick={() => chooseLine(line, group)}
-                      className={`w-full text-left px-4 py-2.5 border-b border-border/40 transition-colors hover:bg-bg3 ${
-                        selectedLine?.name === line.name && !selectedTrap ? 'bg-gold/10 border-l-2 border-gold pl-3' : ''
+                      onClick={() => toggleLevel(levelKey)}
+                      className={`w-full flex items-center justify-between px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border-b border-border/50 transition-colors ${
+                        level === 'beginner' ? 'text-accent2 bg-accent2/5' :
+                        level === 'intermediate' ? 'text-gold bg-gold/5' :
+                        'text-danger bg-danger/5'
                       }`}
                     >
-                      <div className={`text-sm font-semibold truncate ${
-                        selectedLine?.name === line.name && !selectedTrap ? 'text-gold' : 'text-white'
-                      }`}>
-                        {line.name}
-                      </div>
-                      <div className="text-xs text-muted font-mono mt-0.5 truncate">
-                        {line.moves.slice(0, 5).join(' ')}
-                      </div>
+                      <span>{level}</span>
+                      {levelOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                     </button>
-                  ))}
-                </div>
-              ))}
+                    {levelOpen && lines.map(({ group, ...line }) => (
+                      <button
+                        key={line.name}
+                        onClick={() => chooseLine(line, group)}
+                        className={`w-full text-left px-4 py-2.5 border-b border-border/40 transition-colors hover:bg-bg3 ${
+                          selectedLine?.name === line.name && !selectedTrap ? 'bg-gold/10 border-l-2 border-gold pl-3' : ''
+                        }`}
+                      >
+                        <div className={`text-sm font-semibold truncate ${
+                          selectedLine?.name === line.name && !selectedTrap ? 'text-gold' : 'text-white'
+                        }`}>
+                          {line.name}
+                        </div>
+                        <div className="text-xs text-muted font-mono mt-0.5 truncate">
+                          {line.moves.slice(0, 5).join(' ')}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )
+              })}
             </>
           )}
           {(activeColor === 'mates' || traps.length > 0) && (
             <>
               {openingsByLevel.length > 0 && (
-                <div className="px-4 py-2 text-[10px] font-bold text-muted uppercase tracking-widest border-b border-border bg-bg3/40">
-                  Traps
-                </div>
+                <button
+                  onClick={() => toggleSection('traps')}
+                  className="w-full flex items-center justify-between px-4 py-2 text-[10px] font-bold text-muted uppercase tracking-widest border-b border-border bg-bg3/40 hover:text-white transition-colors"
+                >
+                  <span>Traps</span>
+                  {expandedSections.traps ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </button>
               )}
               {traps.length === 0
                 ? <div className="text-center text-muted py-10 text-sm">No traps found</div>
-                : ['beginner', 'intermediate', 'advanced'].map(level => {
+                : (openingsByLevel.length === 0 || expandedSections.traps) && ['beginner', 'intermediate', 'advanced'].map(level => {
                     const group = traps.filter(t => t.level === level)
                     if (!group.length) return null
+                    const levelKey = `traps-${level}`
+                    const levelOpen = !!expandedLevels[levelKey]
                     return (
                       <div key={level}>
-                        <div className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border-b border-border/50 ${
-                          level === 'beginner' ? 'text-accent2 bg-accent2/5' :
-                          level === 'intermediate' ? 'text-gold bg-gold/5' :
-                          'text-danger bg-danger/5'
-                        }`}>
-                          {level}
-                        </div>
-                        {group.map(trap => (
+                        <button
+                          onClick={() => toggleLevel(levelKey)}
+                          className={`w-full flex items-center justify-between px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border-b border-border/50 transition-colors ${
+                            level === 'beginner' ? 'text-accent2 bg-accent2/5' :
+                            level === 'intermediate' ? 'text-gold bg-gold/5' :
+                            'text-danger bg-danger/5'
+                          }`}
+                        >
+                          <span>{level}</span>
+                          {levelOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        </button>
+                        {levelOpen && group.map(trap => (
                           <TrapListItem key={trap.id} trap={trap} active={selectedTrap?.id === trap.id}
                             onClick={() => selectTrap(trap)}
                             studyCount={progressManager.getTrapStudyCount(trap.id)}
