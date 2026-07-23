@@ -138,10 +138,47 @@ const FANTASY_PIECES = Object.fromEntries(
   }))
 )
 
+// "Gothic" and "Byzantine" piece sets — Ryan's own artwork (Chess Info/Chess
+// related images in the vault), each already two-toned (a light and a dark
+// side drawn as distinct art, not one shape recolored via CSS), so unlike
+// Fantasy these are rendered with no PIECE_FILTERS at all. Unlike Fantasy's
+// square (933x933) viewBox, this artwork's viewBox is portrait (100x120 for
+// Gothic, 100x140 for Byzantine) — a plain width/height:100% <img> stretches
+// non-square content to fill the square box (an <img>'s default object-fit
+// is 'fill'), squishing every piece; object-fit: contain alone isn't enough
+// either, since each piece has wildly different internal headroom within
+// that shared viewBox (the Gothic king's crown tip sits ~2px below the
+// viewBox's top edge, the pawn has ~15px of clear space) — contain scales
+// to the full viewBox height, so the king ends up touching the top of the
+// square while the pawn floats with room to spare. Capping the image at 82%
+// of the wrapper on both axes (via a centered flex wrapper) guarantees the
+// same minimum margin for every piece regardless of its own art's padding.
+function staticPieceSet(folder) {
+  return Object.fromEntries(
+    ['P', 'R', 'N', 'B', 'Q', 'K'].flatMap(type => ['w', 'b'].map(color => {
+      const code = color + type
+      return [code, () => (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <img
+            src={`/pieces/${folder}/${code}.svg`}
+            alt=""
+            draggable={false}
+            style={{ width: '82%', height: '82%', objectFit: 'contain' }}
+          />
+        </div>
+      )]
+    }))
+  )
+}
+const GOTHIC_PIECES = staticPieceSet('gothic')
+const BYZANTINE_PIECES = staticPieceSet('byzantine')
+
 const PIECE_SETS = {
   classic: CLASSIC_PIECES,
   solid: SOLID_PIECES,
   fantasy: FANTASY_PIECES,
+  gothic: GOTHIC_PIECES,
+  byzantine: BYZANTINE_PIECES,
 }
 
 // Tiny sword marking a legal (non-capture) destination square, in place of a
