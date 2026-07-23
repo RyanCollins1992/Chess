@@ -23,7 +23,6 @@ export const NAV = [
   { section: 'OPENINGS' },
   { id: 'spaced-review', label: 'Spaced Review',  icon: '↻', badge: true },
   { id: 'openings',      label: 'Openings',       icon: '♟',  },
-  { id: 'learn-openings',label: 'Learn Openings', icon: '⚜', },
   { id: 'opening-database',label:'Opening Database',icon:'▤', },
   { id: 'opening-quiz',  label: 'Opening Quiz',   icon: '✒', },
   { id: 'favourites',    label: 'Favourites',     icon: '✧', },

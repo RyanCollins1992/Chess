@@ -797,6 +797,26 @@ function RepertoireStudy({ line, group, showToast }) {
           <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">💡 Main Idea</div>
           <p className="text-sm text-muted leading-relaxed">{line.idea}</p>
         </div>
+        {line.pros && (
+          <div className="p-4 border-b border-border space-y-1">
+            <div className="text-xs font-bold text-accent2 uppercase tracking-wide">✅ Pros</div>
+            {line.pros.map((p, i) => (
+              <div key={i} className="text-xs text-muted flex gap-1.5">
+                <span className="text-accent2 shrink-0">+</span>{p}
+              </div>
+            ))}
+          </div>
+        )}
+        {line.cons && (
+          <div className="p-4 border-b border-border space-y-1">
+            <div className="text-xs font-bold text-danger uppercase tracking-wide">⚠️ Cons</div>
+            {line.cons.map((c, i) => (
+              <div key={i} className="text-xs text-muted flex gap-1.5">
+                <span className="text-danger shrink-0">−</span>{c}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="p-4">
           <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Move Order</div>
           <div className="flex flex-wrap gap-1">

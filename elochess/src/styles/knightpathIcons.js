@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Brain, BookOpen, GraduationCap, Target, Bookmark, Star,
+  LayoutDashboard, Brain, BookOpen, Target, Bookmark, Star,
   Zap, Crown, Flag, RefreshCcw, Hash, Cpu, Gamepad2, Upload, Eye,
   TrendingUp, Map, Settings, Search, Menu, Flame, Trophy, Crosshair, Library,
 } from 'lucide-react'
@@ -17,7 +17,6 @@ export const KNIGHTPATH_NAV_ICONS = {
   dashboard: LayoutDashboard,
   'spaced-review': Brain,
   openings: BookOpen,
-  'learn-openings': GraduationCap,
   'opening-database': Library,
   'opening-quiz': Target,
   favourites: Bookmark,

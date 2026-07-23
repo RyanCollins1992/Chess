@@ -2,7 +2,7 @@
 // files (chessopenings.com/eco/, scraped 2026-07-18). Names/moves verbatim,
 // no editorial content. Grouped by the five ECO category descriptions, not
 // by ECO code letter — the app doesn't surface ECO codes in its UI,
-// consistent with openingsRepertoire.js / LearnOpeningsPage.jsx naming.
+// consistent with openingsRepertoire.js naming.
 // Entries under 8 moves are filtered out at generation time (too
 // shallow to study) — not padded with invented continuations.
 export const ECO_CATEGORIES = [

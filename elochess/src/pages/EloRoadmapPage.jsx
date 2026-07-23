@@ -62,7 +62,7 @@ const ROADMAP = [
       'Review your own games for mistakes',
     ],
     traps: ['stafford-gambit', 'budapest-black', 'traxler'],
-    pages: ['learn-openings', 'endgames', 'mate-patterns'],
+    pages: ['openings', 'endgames', 'mate-patterns'],
   },
   {
     range: '1200–1500',

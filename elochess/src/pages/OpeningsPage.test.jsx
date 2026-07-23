@@ -80,6 +80,13 @@ describe('OpeningsPage', () => {
     expect(screen.getByText('Move 1 of 8')).toBeInTheDocument()
   })
 
+  it('shows pros and cons for the selected repertoire line', () => {
+    render(<OpeningsPage />)
+    fireEvent.click(screen.getByText('Italian Game: Giuoco Piano'))
+    expect(screen.getByText('Natural, easy development')).toBeInTheDocument()
+    expect(screen.getByText('Less forcing than sharper Italian tries')).toBeInTheDocument()
+  })
+
   it('selecting a trap shows Drill mode with the trap name and key concept', () => {
     render(<OpeningsPage />)
     fireEvent.click(screen.getByText('Fried Liver Attack'))
