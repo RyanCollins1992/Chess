@@ -79,11 +79,14 @@ export default function CommandPalette({ open, onClose }) {
   if (!open) return null
 
   let rowIdx = -1
+  const activeItem = flat[activeIdx]
+  const activeId = activeItem ? `command-option-${activeItem.kind}-${activeItem.id}` : undefined
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/60"
       onClick={onClose}
+      role="presentation"
     >
       <div
         className="w-full max-w-lg mx-4 bg-bg2 border border-border rounded-lg shadow-2xl overflow-hidden"
@@ -98,15 +101,21 @@ export default function CommandPalette({ open, onClose }) {
             onKeyDown={handleKeyDown}
             placeholder="Search openings, puzzles, pages…"
             className="flex-1 bg-transparent text-sm text-white placeholder-muted outline-none font-mono"
+            role="combobox"
+            aria-label="Search openings, puzzles, pages"
+            aria-expanded={flat.length > 0}
+            aria-controls="command-palette-listbox"
+            aria-autocomplete="list"
+            aria-activedescendant={activeId}
           />
         </div>
 
-        <div className="max-h-96 overflow-y-auto py-1">
+        <div className="max-h-96 overflow-y-auto py-1" id="command-palette-listbox" role="listbox">
           {flat.length === 0 && (
             <div className="px-4 py-6 text-sm text-muted text-center">No results</div>
           )}
           {groups.map(group => (
-            <div key={group.label}>
+            <div key={group.label} role="group" aria-label={group.label}>
               <div className="px-4 pt-2.5 pb-1 text-[10px] font-mono font-bold uppercase tracking-widest text-muted">
                 {group.label}
               </div>
@@ -116,6 +125,9 @@ export default function CommandPalette({ open, onClose }) {
                 return (
                   <button
                     key={`${item.kind}-${item.id}`}
+                    id={`command-option-${item.kind}-${item.id}`}
+                    role="option"
+                    aria-selected={active}
                     onClick={() => runItem(item)}
                     onMouseEnter={() => setActiveIdx(rowIdx)}
                     className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-sm transition-colors ${

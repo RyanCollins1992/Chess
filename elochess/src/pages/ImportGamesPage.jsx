@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { parseGame } from '../core/ChessComImport'
 
@@ -6,6 +6,32 @@ const MONTHS = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December'
 ]
+
+// Sortable-column headers over the game list — inspired by SmoothUI's
+// DataTableColumnHeader pattern (sort toggle per column), adapted to this
+// app's card-row layout rather than a literal <table> (the reference
+// pattern assumes tabular data with many columns; a game list is closer to
+// a flat feed, so this keeps the existing GameRow cards and just adds
+// sort/direction controls above them).
+const SORT_OPTIONS = [
+  { id: 'date',     label: 'Date' },
+  { id: 'opponent', label: 'Opponent' },
+  { id: 'accuracy', label: 'Accuracy' },
+  { id: 'moves',    label: 'Moves' },
+]
+
+function sortGames(games, sortBy, dir) {
+  const sorted = [...games].sort((a, b) => {
+    switch (sortBy) {
+      case 'opponent': return a.opponent.localeCompare(b.opponent)
+      case 'accuracy': return (a.accuracy ?? -1) - (b.accuracy ?? -1)
+      case 'moves':    return a.moves - b.moves
+      case 'date':
+      default:         return new Date(a.date) - new Date(b.date)
+    }
+  })
+  return dir === 'desc' ? sorted.reverse() : sorted
+}
 
 export default function ImportGamesPage() {
   // Seed from the store so an already-fetched list survives navigating away and back
@@ -21,6 +47,8 @@ export default function ImportGamesPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError]   = useState('')
   const [fetched, setFetched] = useState(Boolean(saved.games?.length))
+  const [sortBy, setSortBy]   = useState('date')
+  const [sortDir, setSortDir] = useState('desc')
   const navigate  = useAppStore(s => s.navigate)
   const showToast = useAppStore(s => s.showToast)
   const setImportedGames = useAppStore(s => s.setImportedGames)
@@ -60,6 +88,12 @@ export default function ImportGamesPage() {
   }
 
   const years = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i)
+  const sortedGames = useMemo(() => sortGames(games, sortBy, sortDir), [games, sortBy, sortDir])
+
+  const toggleSort = (id) => {
+    if (sortBy === id) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(id); setSortDir('desc') }
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -117,10 +151,27 @@ export default function ImportGamesPage() {
 
         {games.length > 0 && (
           <div className="space-y-2">
-            <div className="text-xs text-muted uppercase tracking-wide font-bold mb-3">
-              {games.length} games · {MONTHS[month-1]} {year}
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div className="text-xs text-muted uppercase tracking-wide font-bold">
+                {games.length} games · {MONTHS[month-1]} {year}
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted mr-1">Sort by</span>
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => toggleSort(opt.id)}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 ${
+                      sortBy === opt.id ? 'bg-gold text-bg' : 'bg-bg3 text-muted border border-border hover:text-white'
+                    }`}
+                  >
+                    {opt.label}
+                    {sortBy === opt.id && <span>{sortDir === 'desc' ? '↓' : '↑'}</span>}
+                  </button>
+                ))}
+              </div>
             </div>
-            {games.map((game, i) => (
+            {sortedGames.map((game, i) => (
               <GameRow key={i} game={game} onReview={() => openReview(game)} />
             ))}
           </div>

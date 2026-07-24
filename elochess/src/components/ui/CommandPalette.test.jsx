@@ -21,6 +21,36 @@ describe('CommandPalette', () => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
   })
 
+  it('exposes proper combobox ARIA on the input and options', () => {
+    render(<CommandPalette open onClose={() => {}} />)
+    const input = screen.getByPlaceholderText('Search openings, puzzles, pages…')
+    expect(input).toHaveAttribute('role', 'combobox')
+    expect(input).toHaveAttribute('aria-expanded', 'true')
+    expect(input).toHaveAttribute('aria-controls', 'command-palette-listbox')
+    expect(input).toHaveAttribute('aria-autocomplete', 'list')
+
+    const listbox = document.getElementById('command-palette-listbox')
+    expect(listbox).toHaveAttribute('role', 'listbox')
+
+    const options = screen.getAllByRole('option')
+    expect(options.length).toBeGreaterThan(0)
+    // The first option (index 0) starts active per the component's own
+    // reset-on-open behavior.
+    expect(options[0]).toHaveAttribute('aria-selected', 'true')
+    expect(input.getAttribute('aria-activedescendant')).toBe(options[0].id)
+  })
+
+  it('aria-activedescendant tracks the highlighted option on arrow-down', () => {
+    render(<CommandPalette open onClose={() => {}} />)
+    const input = screen.getByPlaceholderText('Search openings, puzzles, pages…')
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+
+    const options = screen.getAllByRole('option')
+    expect(options[1]).toHaveAttribute('aria-selected', 'true')
+    expect(options[0]).toHaveAttribute('aria-selected', 'false')
+    expect(input.getAttribute('aria-activedescendant')).toBe(options[1].id)
+  })
+
   it('filters results as you type', () => {
     render(<CommandPalette open onClose={() => {}} />)
     const input = screen.getByPlaceholderText('Search openings, puzzles, pages…')

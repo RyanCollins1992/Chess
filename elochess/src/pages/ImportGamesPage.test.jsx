@@ -74,6 +74,35 @@ describe('ImportGamesPage', () => {
     expect(await screen.findByText('No games found for', { exact: false })).toBeInTheDocument()
   })
 
+  it('sorting by Opponent reorders the game list alphabetically, and toggling direction reverses it', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true, status: 200,
+      json: async () => ({ games: [
+        sampleGame({ black: { username: 'zebra', rating: 2000 }, pgn: samplePgn().replace('opponent1', 'zebra') }),
+        sampleGame({ black: { username: 'apple', rating: 2000 }, pgn: samplePgn().replace('opponent1', 'apple') }),
+      ] }),
+    })
+    render(<ImportGamesPage />)
+    fireEvent.change(screen.getByLabelText('Chess.com username'), { target: { value: 'hikaru' } })
+    fireEvent.click(screen.getByText('Fetch Games'))
+    await screen.findByText('vs zebra', { exact: false })
+
+    const opponentRowText = () => [...document.querySelectorAll('.space-y-2 > div.flex.items-center.gap-4')]
+      .map(el => el.textContent)
+
+    // First click on a column defaults to descending (matches Date/Accuracy/
+    // Moves' "newest/highest first" default) — for Opponent that's Z→A.
+    fireEvent.click(screen.getByText('Opponent'))
+    let rows = opponentRowText()
+    expect(rows[0]).toContain('zebra')
+    expect(rows[1]).toContain('apple')
+
+    fireEvent.click(screen.getByText('Opponent')) // toggle direction → A→Z
+    rows = opponentRowText()
+    expect(rows[0]).toContain('apple')
+    expect(rows[1]).toContain('zebra')
+  })
+
   it('clicking Review sets the review game and navigates to Game Review', async () => {
     fetch.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ games: [sampleGame()] }) })
     render(<ImportGamesPage />)
