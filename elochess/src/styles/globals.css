@@ -144,6 +144,29 @@
     animation: none;
     background: var(--color-gold);
   }
+  .clock-tick {
+    animation: none;
+  }
+}
+
+/* Live-play game timer's "ambient clock-tick" (Free Play / vs. Coach) — a
+   subtle once-per-second pulse on the ⏱ glyph next to the elapsed time,
+   from the original Tempo design doc's "Premium interactions" list (never
+   picked up until now, see project memory). Purely decorative (the numeric
+   text already conveys the real information), so unlike check-blink/
+   last-move-glow above — which communicate actual game state and stay on
+   under reduced motion — this one is skipped entirely for
+   prefers-reduced-motion. Retriggered by keying the element on
+   timer.seconds each render, so a plain one-shot (non-infinite) animation
+   replays automatically without any imperative JS class-toggling.
+*/
+@keyframes clock-tick {
+  0%   { opacity: 0.45; transform: scale(0.82); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.clock-tick {
+  display: inline-block;
+  animation: clock-tick 0.3s ease-out;
 }
 
 @layer components {

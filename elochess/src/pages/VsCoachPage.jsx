@@ -5,9 +5,12 @@ import MoveLedger from '../components/ui/MoveLedger'
 import GameStatusBadge from '../components/ui/GameStatusBadge'
 import ModeToggle from '../components/ui/ModeToggle'
 import AnalysisPanel from '../components/ui/AnalysisPanel'
+import PromotionPicker from '../components/ui/PromotionPicker'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useGameTimer } from '../hooks/useGameTimer'
 import { useLiveEval } from '../hooks/useLiveEval'
+import { useBookMove } from '../hooks/useBookMove'
+import { usePendingPromotion } from '../hooks/usePendingPromotion'
 import { useAppStore } from '../store/useAppStore'
 import { aiCoach } from '../core/AICoach'
 import { readThemeColor } from '../core/themeColor'
@@ -87,6 +90,7 @@ function SetupScreen({ playerColor, setPlayerColor, difficulty, setDifficulty, o
 
 function GameScreen({ playerColor, difficulty, onNewGame }) {
   const { fen, chessRef, move, tryMove } = useChessBoard()
+  const promotion = usePendingPromotion(chessRef)
   const workerRef   = useRef(null)
   const isMountedRef = useRef(true)
   const [status, setStatus]   = useState('')
@@ -99,11 +103,16 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
   const showToast = useAppStore(s => s.showToast)
   const timer = useGameTimer(!gameOver)
   const { sfReady, evalResult, tactic, tacticArrows } = useLiveEval(fen, mode === 'analysis')
+  const bookMove = useBookMove(fen, moveList, mode === 'analysis')
   const arrowOptions = useMemo(() => ({
     ...defaultArrowOptions,
     ...ARROW_COLORS,
     secondaryColor: readThemeColor('--color-danger', '#DC2626'),
   }), [])
+  const boardArrows = useMemo(
+    () => bookMove ? [...tacticArrows, bookMove] : tacticArrows,
+    [tacticArrows, bookMove]
+  )
 
   const getStatus = () => {
     const c = chessRef.current
@@ -207,8 +216,9 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleDrop = async ({ sourceSquare: from, targetSquare: to }) => {
+  const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (chessRef.current.turn() !== playerColor || thinking || gameOver) return false
+    if (promotion.detect(from, to)) { promotion.request(from, to); return false }
     const result = tryMove(from, to)
     if (!result) return false
     setLastMove({ from, to, captured: !!result.captured })
@@ -217,6 +227,18 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
     if (chessRef.current.isGameOver()) { setGameOver(true); return true }
     setTimeout(() => makeAiMove(), 300)
     return true
+  }
+
+  const confirmPromotion = (piece) => {
+    const { from, to } = promotion.pending
+    promotion.cancel()
+    const result = tryMove(from, to, piece)
+    if (!result) return
+    setLastMove({ from, to, captured: !!result.captured })
+    setMoveList(chessRef.current.history())
+    setStatus(getStatus())
+    if (chessRef.current.isGameOver()) { setGameOver(true); return }
+    setTimeout(() => makeAiMove(), 300)
   }
 
   const askTip = async () => {
@@ -237,16 +259,19 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
             <div className="text-sm font-medium text-white">Coach · {difficulty.label}</div>
             {thinking && <div className="text-xs text-gold animate-pulse ml-auto">thinking…</div>}
           </div>
-          <div className={thinking ? 'opacity-90' : ''}>
+          <div className={`relative ${thinking ? 'opacity-90' : ''}`}>
             <Chessboard position={fen} onPieceDrop={handleDrop}
               boardOrientation={playerColor === 'b' ? 'black' : 'white'}
               arePiecesDraggable={!gameOver && !thinking}
               lastMove={lastMove}
-              arrows={tacticArrows}
+              arrows={boardArrows}
               allowDrawingArrows
               arrowOptions={arrowOptions}
               clearArrowsOnPositionChange
             />
+            {promotion.pending && (
+              <PromotionPicker color={promotion.pending.color} onSelect={confirmPromotion} onCancel={promotion.cancel} />
+            )}
           </div>
           <div className="flex items-center gap-2 mt-2">
             <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-sm">♟</div>
@@ -267,7 +292,9 @@ function GameScreen({ playerColor, difficulty, onNewGame }) {
           text={status || (fen.split(' ')[1] === 'w' ? "White's turn" : "Black's turn")}
           tone={gameOver ? 'over' : status.includes('is in check!') ? 'check' : 'default'}
         />
-        <div className="text-xs text-muted font-mono tabular-nums shrink-0">⏱ {timer.formatted}</div>
+        <div className="text-xs text-muted font-mono tabular-nums shrink-0">
+          <span key={timer.seconds} className="clock-tick">⏱</span> {timer.formatted}
+        </div>
         {mode === 'analysis' && (
           <AnalysisPanel fen={fen} sanMoveList={moveList} sfReady={sfReady} evalResult={evalResult} tactic={tactic} />
         )}

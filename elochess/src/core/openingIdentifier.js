@@ -61,13 +61,11 @@ function matchLength(sanMoves, lineMoves) {
 // (e.g. OpponentScout.js) should prefer that over a sub-threshold result.
 const MIN_MATCH_LEN = 3
 
-// Identifies the opening/trap a game's move list has followed, by finding
-// the named line (curated traps.js/openingsRepertoire.js, or the broader
-// ecoDatabase.js) whose own moves share the longest matching prefix with
-// what's actually been played. Returns null once the game diverges from
-// every known line, before any moves have been played, or when the best
-// match found is too shallow to be a meaningful identification.
-export function identifyOpening(sanMoves) {
+// Shared by identifyOpening/nextBookMove — finds the named line whose own
+// moves share the longest matching prefix with what's actually been played.
+// Returns null before any moves have been played, or when the best match
+// found is too shallow (see MIN_MATCH_LEN) to be a meaningful identification.
+function findBestMatch(sanMoves) {
   if (!sanMoves || sanMoves.length === 0) return null
 
   let best = null
@@ -76,5 +74,28 @@ export function identifyOpening(sanMoves) {
     const len = matchLength(sanMoves, line.moves)
     if (len > bestLen) { bestLen = len; best = line }
   }
-  return bestLen >= MIN_MATCH_LEN ? best.name : null
+  return bestLen >= MIN_MATCH_LEN ? { line: best, matchLen: bestLen } : null
+}
+
+// Identifies the opening/trap a game's move list has followed. Returns null
+// once the game diverges from every known line, before any moves have been
+// played, or when the best match found is too shallow to be meaningful.
+export function identifyOpening(sanMoves) {
+  return findBestMatch(sanMoves)?.line.name ?? null
+}
+
+// The next move ("book move") of whichever named line best matches the
+// game so far — the "book-move ghosting" premium interaction from the
+// original Tempo design doc: a faint preview of what theory recommends
+// next, not a move the player is required to make. Only returns a move
+// when the played moves are a genuine *prefix* of the matched line (not
+// just sharing a long common run that's since diverged) — matchLen must
+// equal sanMoves.length, otherwise the game has already left the book and
+// showing a "next" move from the old line would misleadingly suggest it's
+// still relevant.
+export function nextBookMove(sanMoves) {
+  if (!sanMoves || sanMoves.length === 0) return null
+  const match = findBestMatch(sanMoves)
+  if (!match || match.matchLen !== sanMoves.length) return null
+  return match.line.moves[sanMoves.length] ?? null
 }

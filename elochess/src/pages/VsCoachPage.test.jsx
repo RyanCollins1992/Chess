@@ -202,6 +202,11 @@ describe('VsCoachPage', () => {
     fireEvent.click(screen.getByText('Start Game')) // default White, no AI-first-move complexity
     act(() => { vi.advanceTimersByTime(3000) })
 
-    expect(screen.getByText('⏱ 00:03')).toBeInTheDocument()
+    // The ⏱ glyph now lives in its own (ambient clock-tick) span, so the
+    // full "⏱ 00:03" string is split across elements — match on either
+    // piece individually rather than the combined text.
+    expect(screen.getByText('⏱')).toBeInTheDocument()
+    expect(screen.getByText('00:03', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('⏱')).toHaveClass('clock-tick')
   })
 })

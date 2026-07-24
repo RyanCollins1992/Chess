@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { identifyOpening } from './openingIdentifier'
+import { identifyOpening, nextBookMove } from './openingIdentifier'
 
 describe('identifyOpening', () => {
   it('returns null when no moves have been played', () => {
@@ -56,5 +56,36 @@ describe('identifyOpening', () => {
     // OPENING_REPERTOIRE — proves the broader database is actually searched.
     const moves = ['Nh3', 'd5', 'g3', 'e5', 'f4', 'Bxh3', 'Bxh3', 'exf4']
     expect(identifyOpening(moves)).toBe('Amar Opening: Gambit')
+  })
+})
+
+describe('nextBookMove', () => {
+  it('returns null when no moves have been played', () => {
+    expect(nextBookMove([])).toBeNull()
+    expect(nextBookMove(null)).toBeNull()
+  })
+
+  it('returns the matched line\'s next move when the played moves are a genuine prefix', () => {
+    // Same Fried Liver Attack line as the identifyOpening tests above, minus
+    // its final move — the "book" suggestion should be exactly that move.
+    const moves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'd5', 'exd5', 'Na5', 'Bb5+', 'c6', 'dxc6', 'bxc6']
+    expect(nextBookMove(moves)).toBe('Bxc6+')
+  })
+
+  it('returns null once the game has diverged past every known line (no longer "in book")', () => {
+    // Same as identifyOpening's "still matches once diverged" test — the name
+    // identification stays sticky (still Fried Liver Attack), but there's no
+    // honest "next" move to suggest once real moves outrun the line.
+    const moves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'd5', 'exd5', 'Na5', 'Bb5+', 'c6', 'dxc6', 'bxc6', 'Bxc6+', 'Kd7']
+    expect(nextBookMove(moves)).toBeNull()
+  })
+
+  it('returns null once the matched line is fully played out (nothing left to suggest)', () => {
+    const moves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'd5', 'exd5', 'Na5', 'Bb5+', 'c6', 'dxc6', 'bxc6', 'Bxc6+']
+    expect(nextBookMove(moves)).toBeNull()
+  })
+
+  it('returns null when the opening move matches nothing in the curated data', () => {
+    expect(nextBookMove(['a4'])).toBeNull()
   })
 })

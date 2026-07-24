@@ -5,9 +5,12 @@ import MoveLedger from '../components/ui/MoveLedger'
 import GameStatusBadge from '../components/ui/GameStatusBadge'
 import ModeToggle from '../components/ui/ModeToggle'
 import AnalysisPanel from '../components/ui/AnalysisPanel'
+import PromotionPicker from '../components/ui/PromotionPicker'
 import { useChessBoard } from '../hooks/useChessBoard'
 import { useGameTimer } from '../hooks/useGameTimer'
 import { useLiveEval } from '../hooks/useLiveEval'
+import { useBookMove } from '../hooks/useBookMove'
+import { usePendingPromotion } from '../hooks/usePendingPromotion'
 import { useAppStore } from '../store/useAppStore'
 import { readThemeColor } from '../core/themeColor'
 import { EASE_SETTLE } from '../styles/motion'
@@ -34,11 +37,17 @@ export default function FreePlayPage() {
   const showToast = useAppStore(s => s.showToast)
   const timer = useGameTimer(!gameOver)
   const { sfReady, evalResult, tactic, tacticArrows } = useLiveEval(fen, mode === 'analysis')
+  const bookMove = useBookMove(fen, moveList, mode === 'analysis')
+  const promotion = usePendingPromotion(chessRef)
   const arrowOptions = useMemo(() => ({
     ...defaultArrowOptions,
     ...ARROW_COLORS,
     secondaryColor: readThemeColor('--color-danger', '#DC2626'),
   }), [])
+  const boardArrows = useMemo(
+    () => bookMove ? [...tacticArrows, bookMove] : tacticArrows,
+    [tacticArrows, bookMove]
+  )
 
   const getStatus = () => {
     const c = chessRef.current
@@ -51,6 +60,7 @@ export default function FreePlayPage() {
 
   const handleDrop = ({ sourceSquare: from, targetSquare: to }) => {
     if (gameOver) return false
+    if (promotion.detect(from, to)) { promotion.request(from, to); return false }
     const result = tryMove(from, to)
     if (!result) return false
     setMoveList(chessRef.current.history())
@@ -58,6 +68,17 @@ export default function FreePlayPage() {
     setStatus(getStatus())
     if (chessRef.current.isGameOver()) setGameOver(true)
     return true
+  }
+
+  const confirmPromotion = (piece) => {
+    const { from, to } = promotion.pending
+    promotion.cancel()
+    const result = tryMove(from, to, piece)
+    if (!result) return
+    setMoveList(chessRef.current.history())
+    setLastMove({ from, to, captured: !!result.captured })
+    setStatus(getStatus())
+    if (chessRef.current.isGameOver()) setGameOver(true)
   }
 
   const handleUndo = () => {
@@ -94,14 +115,19 @@ export default function FreePlayPage() {
             <div className="w-7 h-7 rounded-full bg-bg3 border border-border flex items-center justify-center text-sm">{orientation === 'white' ? '♚' : '♔'}</div>
             <div className="text-sm text-muted">{orientation === 'white' ? 'Black' : 'White'}</div>
           </div>
-          <Chessboard position={fen} onPieceDrop={handleDrop} boardOrientation={orientation}
-            arePiecesDraggable={!gameOver}
-            lastMove={lastMove}
-            arrows={tacticArrows}
-            allowDrawingArrows
-            arrowOptions={arrowOptions}
-            clearArrowsOnPositionChange
-          />
+          <div className="relative">
+            <Chessboard position={fen} onPieceDrop={handleDrop} boardOrientation={orientation}
+              arePiecesDraggable={!gameOver}
+              lastMove={lastMove}
+              arrows={boardArrows}
+              allowDrawingArrows
+              arrowOptions={arrowOptions}
+              clearArrowsOnPositionChange
+            />
+            {promotion.pending && (
+              <PromotionPicker color={promotion.pending.color} onSelect={confirmPromotion} onCancel={promotion.cancel} />
+            )}
+          </div>
           <div className="flex items-center gap-2 mt-2">
             <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-sm">{orientation === 'white' ? '♔' : '♚'}</div>
             <div className="text-sm text-muted">{orientation === 'white' ? 'White' : 'Black'}</div>
@@ -122,7 +148,9 @@ export default function FreePlayPage() {
           text={status || 'White to move'}
           tone={gameOver ? 'over' : isCheck ? 'check' : 'default'}
         />
-        <div className="text-xs text-muted font-mono tabular-nums shrink-0">⏱ {timer.formatted}</div>
+        <div className="text-xs text-muted font-mono tabular-nums shrink-0">
+          <span key={timer.seconds} className="clock-tick">⏱</span> {timer.formatted}
+        </div>
 
         <div className="grid grid-cols-2 gap-2 shrink-0">
           <button onClick={handleUndo} disabled={moveList.length === 0} className="btn-ghost text-sm disabled:opacity-40">← Undo</button>

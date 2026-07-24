@@ -19,6 +19,12 @@ class FakeWorker {
   terminate() {}
 }
 const flush = () => act(async () => { await new Promise(r => setTimeout(r, 0)) })
+// react-chessboard needs longer than a bare tick to settle its internal piece
+// reconciliation after a *large* position change (loading a sparse endgame FEN
+// over a full board) — a jsdom-only quirk, since real animation frames never
+// tick here (same class of gotcha as the getBoundingClientRect polyfill in
+// test/setup.js). Only the promotion-picker tests below load such a position.
+const flushBoardAnimation = () => act(async () => { await new Promise(r => setTimeout(r, 400)) })
 
 describe('FreePlayPage', () => {
   let originalWorker
@@ -163,6 +169,68 @@ describe('FreePlayPage', () => {
     act(() => { vi.advanceTimersByTime(3000) })
 
     fireEvent.click(screen.getByText('🎯 Focus')) // re-selecting the already-active mode is a no-op, just asserting the timer is visible regardless of mode
-    expect(screen.getByText('⏱ 00:03')).toBeInTheDocument()
+    // The ⏱ glyph now lives in its own (ambient clock-tick) span, so the
+    // full "⏱ 00:03" string is split across elements — match on either
+    // piece individually rather than the combined text.
+    expect(screen.getByText('⏱')).toBeInTheDocument()
+    expect(screen.getByText('00:03', { exact: false })).toBeInTheDocument()
+    // Ambient clock-tick: the glyph is keyed on timer.seconds so its pulse
+    // animation replays each tick — just confirm the class is present.
+    expect(screen.getByText('⏱')).toHaveClass('clock-tick')
+  })
+
+  it('a pawn reaching the last rank shows the promotion picker instead of auto-queening', async () => {
+    const { container } = render(<FreePlayPage />)
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+    fireEvent.change(screen.getByPlaceholderText('Paste FEN string…'), {
+      target: { value: 'k7/4P3/8/8/8/8/8/4K3 w - - 0 1' },
+    })
+    fireEvent.click(screen.getByText('Load'))
+    await flushBoardAnimation()
+
+    click(container, 'e7')
+    click(container, 'e8')
+
+    expect(screen.getByRole('dialog', { name: 'Choose promotion piece' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Promote to Queen')).toBeInTheDocument()
+    expect(screen.getByLabelText('Promote to Rook')).toBeInTheDocument()
+    expect(screen.getByLabelText('Promote to Bishop')).toBeInTheDocument()
+    expect(screen.getByLabelText('Promote to Knight')).toBeInTheDocument()
+    // No move committed yet — still White to move, the picker is purely a prompt.
+    expect(screen.getByText('White to move')).toBeInTheDocument()
+  })
+
+  it('choosing a piece from the promotion picker completes the move as that piece, not a silent queen', async () => {
+    const { container } = render(<FreePlayPage />)
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+    fireEvent.change(screen.getByPlaceholderText('Paste FEN string…'), {
+      target: { value: 'k7/4P3/8/8/8/8/8/4K3 w - - 0 1' },
+    })
+    fireEvent.click(screen.getByText('Load'))
+    await flushBoardAnimation()
+
+    click(container, 'e7')
+    click(container, 'e8')
+    fireEvent.click(screen.getByLabelText('Promote to Knight'))
+
+    expect(screen.queryByRole('dialog', { name: 'Choose promotion piece' })).not.toBeInTheDocument()
+    expect(screen.getByText('e8=N')).toBeInTheDocument()
+  })
+
+  it('clicking outside the promotion picker cancels it without committing a move', async () => {
+    const { container } = render(<FreePlayPage />)
+    fireEvent.click(screen.getByText('🔍 Analysis'))
+    fireEvent.change(screen.getByPlaceholderText('Paste FEN string…'), {
+      target: { value: 'k7/4P3/8/8/8/8/8/4K3 w - - 0 1' },
+    })
+    fireEvent.click(screen.getByText('Load'))
+    await flushBoardAnimation()
+
+    click(container, 'e7')
+    click(container, 'e8')
+    fireEvent.click(screen.getByRole('dialog', { name: 'Choose promotion piece' }))
+
+    expect(screen.queryByRole('dialog', { name: 'Choose promotion piece' })).not.toBeInTheDocument()
+    expect(screen.getByText('No moves yet')).toBeInTheDocument()
   })
 })
