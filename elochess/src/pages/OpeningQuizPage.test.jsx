@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import OpeningQuizPage from './OpeningQuizPage'
 
 describe('OpeningQuizPage', () => {
@@ -53,6 +53,27 @@ describe('OpeningQuizPage', () => {
     const options = [...document.querySelectorAll('.space-y-2.flex-1 button')]
     fireEvent.click(options[0])
     options.forEach(opt => expect(opt).toBeDisabled())
+  })
+
+  it('the per-question timer counts up and resets on the next question', () => {
+    vi.useFakeTimers()
+    render(<OpeningQuizPage />)
+    fireEvent.click(screen.getByText('Start Quiz'))
+    expect(screen.getByText('⏱ 00:00')).toBeInTheDocument()
+
+    act(() => { vi.advanceTimersByTime(3000) })
+    expect(screen.getByText('⏱ 00:03')).toBeInTheDocument()
+
+    const options = document.querySelectorAll('.space-y-2.flex-1 button')
+    fireEvent.click(options[0])
+    // Timer stops the instant an answer is revealed — stays at 3s even if
+    // more real time passes before the user clicks Next.
+    act(() => { vi.advanceTimersByTime(2000) })
+    expect(screen.getByText('⏱ 00:03')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Next →'))
+    expect(screen.getByText('⏱ 00:00')).toBeInTheDocument()
+    vi.useRealTimers()
   })
 
   it('completing a 5-question quiz reaches the results screen with a score', () => {

@@ -18,6 +18,7 @@ const ROADMAP = [
     ],
     traps: ['scholars-mate', 'back-rank-mate'],
     pages: ['mate-patterns', 'piece-values', 'endgames'],
+    resources: ['Bobby Fischer Teaches Chess', 'Chess Fundamentals — José Raúl Capablanca'],
   },
   {
     range: '400–700',
@@ -33,6 +34,7 @@ const ROADMAP = [
     ],
     traps: ['fried-liver', 'legal-trap', 'london-trap'],
     pages: ['puzzles', 'mate-patterns', 'openings'],
+    resources: ['Chess Tactics for Students — John Bain', 'Logical Chess: Move by Move — Irving Chernev'],
   },
   {
     range: '700–1000',
@@ -48,6 +50,7 @@ const ROADMAP = [
     ],
     traps: ['budapest-white', 'elephant-trap', 'ponziani-trap'],
     pages: ['spaced-review', 'puzzles', 'endgames'],
+    resources: ['Winning Chess Openings — Yasser Seirawan', '1001 Chess Sacrifices and Combinations — Fred Reinfeld'],
   },
   {
     range: '1000–1200',
@@ -63,6 +66,7 @@ const ROADMAP = [
     ],
     traps: ['stafford-gambit', 'budapest-black', 'traxler'],
     pages: ['openings', 'endgames', 'mate-patterns'],
+    resources: ['My System — Aron Nimzowitsch', "Silman's Complete Endgame Course — Jeremy Silman"],
   },
   {
     range: '1200–1500',
@@ -78,6 +82,7 @@ const ROADMAP = [
     ],
     traps: ['caro-kann-trap', 'sicilian-trap'],
     pages: ['vs-coach', 'game-review', 'import-games'],
+    resources: ["The Amateur's Mind — Jeremy Silman", 'How to Reassess Your Chess — Jeremy Silman'],
   },
   {
     range: '1500+',
@@ -93,6 +98,7 @@ const ROADMAP = [
     ],
     traps: ['stafford-gambit', 'traxler'],
     pages: ['vs-coach', 'endgames', 'puzzles'],
+    resources: ["Dvoretsky's Endgame Manual — Mark Dvoretsky", 'My 60 Memorable Games — Bobby Fischer'],
   },
 ]
 
@@ -207,6 +213,23 @@ export default function EloRoadmapPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Recommended reading — real, level-appropriate chess
+                      books rather than in-app links, matching the KnightPath
+                      reference design's per-tier "Resources" list. */}
+                  {stage.resources && (
+                    <div>
+                      <div className="text-xs font-bold text-muted uppercase tracking-wide mb-2">📖 Recommended reading</div>
+                      <ul className="space-y-1.5">
+                        {stage.resources.map((book, j) => (
+                          <li key={j} className="flex items-start gap-2 text-sm text-muted">
+                            <span className="text-gold shrink-0 mt-0.5">·</span>
+                            {book}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

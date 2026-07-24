@@ -28,6 +28,12 @@ describe('EloRoadmapPage', () => {
     expect(screen.getByText('Recognise and avoid forks')).toBeInTheDocument()
   })
 
+  it('the expanded stage also shows a recommended-reading list', () => {
+    render(<EloRoadmapPage />)
+    expect(screen.getByText('📖 Recommended reading')).toBeInTheDocument()
+    expect(screen.getByText('Chess Tactics for Students — John Bain')).toBeInTheDocument()
+  })
+
   it('stages below the current ELO are marked done with a checkmark', () => {
     render(<EloRoadmapPage />)
     // "Complete Beginner" (0–400) is below current ELO 500 — should show ✓.

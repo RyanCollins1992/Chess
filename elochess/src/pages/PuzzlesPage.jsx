@@ -7,6 +7,28 @@ import { PUZZLES } from '../data/puzzles'
 
 const THEMES = ['All', 'Fork', 'Checkmate', 'Tactics', 'Pin', 'Discovery', 'Sacrifice', 'Endgame']
 const DIFFICULTIES = ['All', 'beginner', 'intermediate', 'advanced']
+const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+// Real per-day puzzle-solve counts for the last 7 days (today included),
+// from ProgressManager's own xpHistory log — not fabricated placeholder
+// data, matching this app's established rule (see DashboardPage/ProgressPage)
+// of substituting real tracked numbers for any reference-design widget that
+// assumed data this app doesn't collect.
+function dailyPuzzleActivity(xpHistory) {
+  const days = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    days.push({ key: d.toDateString(), dow: d.getDay(), count: 0 })
+  }
+  const byKey = Object.fromEntries(days.map(d => [d.key, d]))
+  for (const entry of xpHistory) {
+    if (entry.action !== 'PUZZLE_CORRECT' && entry.action !== 'PUZZLE_STREAK_5') continue
+    const key = new Date(entry.date).toDateString()
+    if (byKey[key]) byKey[key].count++
+  }
+  return days
+}
 
 export default function PuzzlesPage() {
   // Restores whichever puzzle was open on the last visit — a refresh
@@ -29,6 +51,14 @@ export default function PuzzlesPage() {
   const showToast     = useAppStore(s => s.showToast)
   const refreshProgress = useAppStore(s => s.refreshProgress)
   const filtered = useMemo(() => PUZZLES.filter(p => (theme === 'All' || p.theme === theme) && (difficulty === 'All' || p.difficulty === difficulty)), [theme, difficulty])
+  // Real per-day puzzle-solve counts from ProgressManager's own xpHistory
+  // log, not fabricated placeholder bars. `progressManager.xpHistory` isn't
+  // itself reactive, so `solved` (which changes on every handleSolved) is
+  // listed as a deliberate recompute trigger rather than a real dependency
+  // of the function body — same "external store, not React state" shape as
+  // DashboardPage.jsx's eloHistory read.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const dailyActivity = useMemo(() => dailyPuzzleActivity(progressManager.xpHistory), [solved])
 
   const pickRandomPuzzle = (excludeIds) => {
     const pool = PUZZLES.filter(p => !excludeIds.includes(p.id))
@@ -66,6 +96,7 @@ export default function PuzzlesPage() {
             {DIFFICULTIES.map(d => <option key={d} value={d}>{d === 'All' ? 'All Levels' : d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
           </select>
           <div className="text-xs text-muted">{solved.length}/{PUZZLES.length} solved · Streak: {streak}</div>
+          <ActivityHeatmap days={dailyActivity} />
         </div>
         <div className="flex-1 overflow-y-auto">
           {filtered.map(p => (
@@ -85,6 +116,35 @@ export default function PuzzlesPage() {
         {selectedPuzzle
           ? <PuzzleBoard key={selectedPuzzle.id} puzzle={selectedPuzzle} isSolved={solved.includes(selectedPuzzle.id)} onSolved={() => handleSolved(selectedPuzzle.id)} />
           : <div className="flex items-center justify-center h-full"><div className="text-center"><div className="text-5xl mb-3 opacity-20">🧩</div><div className="font-semibold text-white">Select a puzzle</div></div></div>}
+      </div>
+    </div>
+  )
+}
+
+// 7-day activity strip — bar height/opacity scales with that day's real
+// solve count (capped visually at 3+ so one big day doesn't flatten the
+// rest of the week to invisible).
+function ActivityHeatmap({ days }) {
+  const max = Math.max(1, ...days.map(d => d.count))
+  return (
+    <div className="pt-1">
+      <div className="flex gap-1 items-end" style={{ height: 24 }}>
+        {days.map((d, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-sm bg-gold transition-all"
+            style={{
+              height: d.count === 0 ? 4 : `${Math.max(30, (d.count / max) * 100)}%`,
+              opacity: d.count === 0 ? 0.15 : 0.4 + 0.2 * Math.min(3, d.count),
+            }}
+            title={`${d.count} puzzle${d.count === 1 ? '' : 's'} solved`}
+          />
+        ))}
+      </div>
+      <div className="flex gap-1 mt-1">
+        {days.map((d, i) => (
+          <span key={i} className="flex-1 text-center text-[9px] text-muted">{DAY_LABELS[d.dow]}</span>
+        ))}
       </div>
     </div>
   )

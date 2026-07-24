@@ -10,18 +10,21 @@ export default function FavouritesPage() {
   const navigate = useAppStore(s => s.navigate)
   const showToast = useAppStore(s => s.showToast)
   const [search, setSearch] = useState('')
+  const [color, setColor] = useState('all')
 
-  const favouriteTraps = TRAPS.filter(t =>
-    favs.includes(t.id) &&
+  // Filter tabs by color rather than by item "type" (Opening/Puzzle/Position,
+  // as in the original Figma reference) — this app only has one favouritable
+  // thing (traps), so a type filter would have nothing real to filter
+  // between. Color is genuine per-trap data (same field OpeningsPage's own
+  // White/Black/Mates tabs already filter on), so it's an honest filter
+  // rather than UI implying capabilities that don't exist.
+  const matchesFilters = (t) =>
+    (color === 'all' || t.color === color) &&
     (!search || t.name.toLowerCase().includes(search.toLowerCase()) ||
      t.opening?.toLowerCase().includes(search.toLowerCase()))
-  )
 
-  const allTraps = TRAPS.filter(t =>
-    !favs.includes(t.id) &&
-    (!search || t.name.toLowerCase().includes(search.toLowerCase()) ||
-     t.opening?.toLowerCase().includes(search.toLowerCase()))
-  )
+  const favouriteTraps = TRAPS.filter(t => favs.includes(t.id) && matchesFilters(t))
+  const allTraps = TRAPS.filter(t => !favs.includes(t.id) && matchesFilters(t))
 
   const handleToggle = (trap) => {
     toggle(trap.id)
@@ -48,6 +51,19 @@ export default function FavouritesPage() {
           placeholder="Search traps…"
           className="w-full bg-bg3 border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-muted outline-none focus:border-gold/50"
         />
+        <div className="flex gap-1 mt-3">
+          {[['all', 'All'], ['white', 'White'], ['black', 'Black']].map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setColor(id)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                color === id ? 'bg-gold text-bg' : 'bg-bg3 text-muted border border-border hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">

@@ -61,4 +61,23 @@ describe('FavouritesPage', () => {
     fireEvent.click(screen.getByText('Fried Liver Attack'))
     expect(useAppStore.getState().currentPage).toBe('openings')
   })
+
+  it('the White/Black color tabs filter traps by their color field', () => {
+    render(<FavouritesPage />)
+    // Fried Liver Attack is a white trap, Traxler Counterattack is black.
+    expect(screen.getByText('Fried Liver Attack')).toBeInTheDocument()
+    expect(screen.getByText('Traxler Counterattack')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('White'))
+    expect(screen.getByText('Fried Liver Attack')).toBeInTheDocument()
+    expect(screen.queryByText('Traxler Counterattack')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Black'))
+    expect(screen.queryByText('Fried Liver Attack')).not.toBeInTheDocument()
+    expect(screen.getByText('Traxler Counterattack')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('All'))
+    expect(screen.getByText('Fried Liver Attack')).toBeInTheDocument()
+    expect(screen.getByText('Traxler Counterattack')).toBeInTheDocument()
+  })
 })

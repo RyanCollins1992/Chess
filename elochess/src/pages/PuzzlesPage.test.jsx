@@ -58,6 +58,23 @@ describe('PuzzlesPage', () => {
     expect(useAppStore.getState().solvedPuzzles).toContain('p1')
   })
 
+  it('solving a puzzle registers on the 7-day activity heatmap for today', () => {
+    const { container } = render(<PuzzlesPage />)
+    fireEvent.click(screen.getByText('Back Rank Checkmate'))
+    click(container, 'd1')
+    click(container, 'd8')
+
+    // Real per-day counts from ProgressManager.xpHistory, not fabricated —
+    // today's bar (the 7th/rightmost) should now show a non-zero count.
+    // Solved via a title attribute rather than an exact count, since
+    // ProgressManager is a persistent singleton and earlier tests in this
+    // file may have already logged a solve earlier "today".
+    const bars = container.querySelectorAll('[title$="puzzle solved"], [title$="puzzles solved"]')
+    expect(bars.length).toBe(7)
+    const todaysBar = bars[bars.length - 1]
+    expect(todaysBar.title).not.toBe('0 puzzles solved')
+  })
+
   it('an incorrect move does not solve it, and a subsequent solve is no longer "first try"', () => {
     const { container } = render(<PuzzlesPage />)
     fireEvent.click(screen.getByText('Back Rank Checkmate'))

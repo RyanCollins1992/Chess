@@ -4,6 +4,7 @@ import { Chessboard } from '../components/ui/Chessboard'
 import { TRAPS } from '../data/traps'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
+import { useGameTimer } from '../hooks/useGameTimer'
 
 // trap.fen is the drill's *starting* position (usually the initial position) —
 // the recognizable position for a "what opening/trap is this?" quiz is the one
@@ -38,6 +39,11 @@ export default function OpeningQuizPage() {
   const [answers, setAnswers] = useState([]) // { correct, chosen }
   const [selected, setSelected] = useState(null) // chosen answer
   const [revealed, setRevealed] = useState(false)
+  // Per-question elapsed timer — stops the moment an answer is revealed
+  // (matching the reference design's per-question "0:42" timer), reset
+  // explicitly whenever a new question starts rather than auto-resetting
+  // on every render.
+  const questionTimer = useGameTimer(phase === 'quiz' && !revealed)
 
   const startQuiz = () => {
     setQuiz(buildQuiz(quizSize))
@@ -47,6 +53,7 @@ export default function OpeningQuizPage() {
     setSelected(null)
     setRevealed(false)
     setPhase('quiz')
+    questionTimer.reset()
   }
 
   const handleAnswer = (option) => {
@@ -68,6 +75,7 @@ export default function OpeningQuizPage() {
       setIndex(i => i + 1)
       setSelected(null)
       setRevealed(false)
+      questionTimer.reset()
     }
   }
 
@@ -93,6 +101,7 @@ export default function OpeningQuizPage() {
               <div className="h-full bg-gold rounded-full transition-all duration-500"
                    style={{ width: `${((index) / quiz.length) * 100}%` }} />
             </div>
+            <span className="text-xs text-muted font-mono tabular-nums shrink-0">⏱ {questionTimer.formatted}</span>
             <span className="text-sm font-bold text-gold shrink-0">{score} ✓</span>
           </div>
 

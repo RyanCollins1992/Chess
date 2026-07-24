@@ -4,6 +4,7 @@ import ProgressPage from './ProgressPage'
 import { progressManager } from '../core/ProgressManager'
 import { useAppStore } from '../store/useAppStore'
 import { TOTAL_TRAPS } from '../data/traps'
+import { PUZZLES } from '../data/puzzles'
 
 describe('ProgressPage', () => {
   beforeEach(() => {
@@ -49,5 +50,26 @@ describe('ProgressPage', () => {
     render(<ProgressPage />)
     expect(screen.queryByText('Rating Progress')).not.toBeInTheDocument()
     expect(screen.queryByText('Current Rating')).not.toBeInTheDocument()
+  })
+
+  it('Skill Breakdown shows real per-feature completion rates, not fabricated ones', () => {
+    useAppStore.setState({ solvedPuzzles: [], matePatternsLearned: [] })
+    render(<ProgressPage />)
+    expect(screen.getByText('Skill Breakdown')).toBeInTheDocument()
+    expect(screen.getByText('Openings')).toBeInTheDocument()
+    expect(screen.getByText('Puzzles')).toBeInTheDocument()
+    expect(screen.getByText('Mate Patterns')).toBeInTheDocument()
+    // Zero solved puzzles / learned patterns should read as a real 0%, not
+    // some placeholder non-zero number.
+    const puzzleRow = screen.getByText('Puzzles').closest('div')
+    expect(puzzleRow).toHaveTextContent('0%')
+  })
+
+  it('Skill Breakdown percentages move with real solved/learned counts', () => {
+    useAppStore.setState({ solvedPuzzles: ['p1', 'p2'] })
+    render(<ProgressPage />)
+    const expectedPct = Math.round((2 / PUZZLES.length) * 100)
+    const puzzleRow = screen.getByText('Puzzles').closest('div')
+    expect(puzzleRow).toHaveTextContent(`${expectedPct}%`)
   })
 })

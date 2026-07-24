@@ -94,6 +94,7 @@ export class ProgressManager extends BaseManager {
   get currentElo()  { return this._data.currentElo }
   get badges()      { return [...this._data.badges] }
   get eloHistory()  { return [...this._data.eloHistory] }
+  get xpHistory()   { return [...this._data.xpHistory] }
   get totalDrills() { return this._data.totalDrills }
   get knownCount()  { return Object.values(this._data.knownTraps).filter(Boolean).length }
 

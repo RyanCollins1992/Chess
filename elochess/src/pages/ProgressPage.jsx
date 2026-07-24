@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { progressManager } from '../core/ProgressManager'
 import { srsEngine } from '../core/SpacedRepetitionEngine'
 import { TRAPS } from '../data/traps'
+import { PUZZLES } from '../data/puzzles'
+import { PATTERNS } from '../data/matePatterns'
 import { useAppStore } from '../store/useAppStore'
 
 // Deliberately doesn't repeat Dashboard's XP/streak/ELO stat cards or ELO
@@ -16,6 +18,21 @@ export default function ProgressPage() {
   const knownCount  = progress.knownCount
   const totalTraps  = TRAPS.length
   const masteredPct = totalTraps > 0 ? Math.round((knownCount / totalTraps) * 100) : 0
+
+  const solvedPuzzles = useAppStore(s => s.solvedPuzzles)
+  const matePatternsLearned = useAppStore(s => s.matePatternsLearned)
+
+  // Skill Breakdown — the reference design's radar chart assumed 4-5
+  // separately-tracked skill scores this app doesn't have; rather than
+  // invent numbers to fill a radar shape, this uses the three real
+  // per-feature completion rates the app already tracks, as plain bars
+  // (matching this page's own existing Level/Trap-Mastery bar style rather
+  // than introducing a new chart type this page has never used).
+  const skills = [
+    { label: 'Openings',      pct: totalTraps > 0 ? Math.round((knownCount / totalTraps) * 100) : 0, color: 'bg-accent2' },
+    { label: 'Puzzles',       pct: PUZZLES.length > 0 ? Math.round((solvedPuzzles.length / PUZZLES.length) * 100) : 0, color: 'bg-gold' },
+    { label: 'Mate Patterns', pct: PATTERNS.length > 0 ? Math.round((matePatternsLearned.length / PATTERNS.length) * 100) : 0, color: 'bg-accent' },
+  ]
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -59,6 +76,24 @@ export default function ProgressPage() {
           <MiniStat label="Enrolled in SRS" value={srsStats.total} />
           <MiniStat label="Due Today"       value={srsStats.due} color="text-gold" />
           <MiniStat label="Mastered (21d+)" value={srsStats.mastered} color="text-accent2" />
+        </div>
+      </div>
+
+      {/* Skill Breakdown */}
+      <div className="card space-y-3">
+        <div className="font-bold text-white">Skill Breakdown</div>
+        <div className="space-y-3">
+          {skills.map(skill => (
+            <div key={skill.label}>
+              <div className="flex items-center justify-between mb-1 text-sm">
+                <span className="text-muted">{skill.label}</span>
+                <span className="text-white font-medium">{skill.pct}%</span>
+              </div>
+              <div className="h-2 bg-bg3 rounded-full overflow-hidden">
+                <div className={`h-full ${skill.color} rounded-full transition-all duration-700`} style={{ width: `${skill.pct}%` }} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
