@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
 import { Chessboard } from './Chessboard'
+import { useAppStore } from '../../store/useAppStore'
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -111,4 +112,37 @@ describe('Chessboard', () => {
     expect(toInner.style.animation).toContain('last-move-glow')
     expect(toInner.style.animation).toContain('capture-impact')
   })
+
+  // Regression test for a real bug, found 2026-07-24: every piece style's
+  // rendered content had `pointer-events: none` on its own wrapper. A real
+  // mouse drag's mousedown landed outside the piece's actual DOM subtree
+  // (confirmed via document.elementFromPoint against a live page — the hit
+  // target was an ancestor wrapper, not the draggable node react-chessboard/
+  // dnd-kit registers), so drag-and-drop was silently broken for every piece
+  // style, for every user, while click-to-move kept working (a click still
+  // bubbles up to the square's own handler regardless of which element
+  // absorbed the initial hit). Removing pointer-events:none from every piece
+  // renderer fixed it — confirmed live with a real mouse-event sequence
+  // (page.mouse.down/move/up, not a high-level "drag" helper) against all 5
+  // piece styles. This test pins the fix at the CSS level, one row per style,
+  // so a future edit can't silently reintroduce pointer-events:none on any
+  // of them.
+  it.each(['classic', 'solid', 'fantasy', 'gothic', 'byzantine'])(
+    'the %s piece style\'s own rendered root is never pointer-events:none (breaks real-mouse dragging)',
+    (pieceStyle) => {
+      useAppStore.setState(s => ({ settings: { ...s.settings, pieceStyle } }))
+      const { container } = render(
+        <Chessboard position={START_FEN} onPieceDrop={() => true} arePiecesDraggable />
+      )
+      const pieceRoot = square(container, 'e2').querySelector('[data-piece]')
+      expect(pieceRoot).toBeTruthy()
+      // Check every descendant too, not just the immediate wrapper — any
+      // pointer-events:none anywhere inside the piece's own subtree causes
+      // the same hit-testing problem the bug was rooted in.
+      const allNodes = [pieceRoot, ...pieceRoot.querySelectorAll('*')]
+      for (const node of allNodes) {
+        expect(node.style.pointerEvents).not.toBe('none')
+      }
+    }
+  )
 })

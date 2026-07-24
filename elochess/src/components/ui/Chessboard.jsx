@@ -43,7 +43,7 @@ function glyphPieceSet(glyphs, styleFor) {
         <div
           style={{
             position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            containerType: 'inline-size', pointerEvents: 'none',
+            containerType: 'inline-size',
           }}
         >
           <span
@@ -101,7 +101,7 @@ const SOLID_PIECES = Object.fromEntries(
       <svg
         viewBox="0 0 100 100"
         style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none',
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
           filter: isWhite ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' : 'drop-shadow(0 1px 2px rgba(255,255,255,0.15))',
         }}
       >
@@ -132,7 +132,7 @@ const FANTASY_PIECES = Object.fromEntries(
         src={`/pieces/fantasy/${code}.svg`}
         alt=""
         draggable={false}
-        style={{ width: '100%', height: '100%', filter: PIECE_FILTERS[color], pointerEvents: 'none' }}
+        style={{ width: '100%', height: '100%', filter: PIECE_FILTERS[color] }}
       />
     )]
   }))
@@ -158,7 +158,7 @@ function staticPieceSet(folder) {
     ['P', 'R', 'N', 'B', 'Q', 'K'].flatMap(type => ['w', 'b'].map(color => {
       const code = color + type
       return [code, () => (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img
             src={`/pieces/${folder}/${code}.svg`}
             alt=""
