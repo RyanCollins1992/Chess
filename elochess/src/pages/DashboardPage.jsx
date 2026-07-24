@@ -6,6 +6,7 @@ import { srsEngine } from '../core/SpacedRepetitionEngine'
 import { TRAPS } from '../data/traps'
 import { PUZZLES } from '../data/puzzles'
 import { useAppStore } from '../store/useAppStore'
+import NumberTicker from '../components/ui/NumberTicker'
 
 /**
  * Dashboard — landing/overview page, sourced from the KnightPath reference
@@ -79,12 +80,12 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-bg2 border border-border rounded-lg px-3 py-1.5">
             <Flame size={14} className="text-orange-500" />
-            <span className="font-extrabold text-sm">{progress.streak}</span>
+            <NumberTicker value={progress.streak} className="font-extrabold text-sm tabular-nums" />
             <span className="text-muted text-xs">day streak</span>
           </div>
           <div className="flex items-center gap-1.5 bg-gold text-white rounded-lg px-3 py-1.5 font-extrabold text-sm">
             <Trophy size={14} />
-            {progress.currentElo} <span className="font-medium text-xs opacity-80">ELO</span>
+            <NumberTicker value={progress.currentElo} className="tabular-nums" /> <span className="font-medium text-xs opacity-80">ELO</span>
           </div>
         </div>
       </div>
@@ -164,7 +165,7 @@ function StatCard({ label, value, sub, subTone = 'muted', icon: Icon }) {
         <div className="text-xs text-muted uppercase tracking-wide font-bold">{label}</div>
         {Icon && <Icon size={14} className="text-muted" />}
       </div>
-      <div className="text-2xl font-extrabold tabular-nums">{value}</div>
+      <div className="text-2xl font-extrabold tabular-nums"><NumberTicker value={value} /></div>
       {sub && <div className={`text-xs ${subClass}`}>{sub}</div>}
     </div>
   )
